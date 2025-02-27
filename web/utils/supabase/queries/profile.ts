@@ -13,7 +13,7 @@ import { emptyPostAuthor, Following, Post, PostAuthor } from "../models/post";
 import { z } from "zod";
 
 /**
- * TODO: Loads data for a specific post given its ID.
+ * TODO: Loads data for a specific profile given its ID.
  *
  * The data returned should match the format of the
  * `PostAuthor` Zod model.
@@ -40,16 +40,15 @@ export const getProfileData = async (
 /**
  * TODO: Retrieve all of the accounts that the user is following.
  *
- *  * The data returned should match the format of an array of
+ * The data returned should match the format of an array of
  * `PostAuthor` Zod models. Make sure to select the correct
  * columns and perform any joins that are necessary. Note that the
  * data returned from the `follow` table might not exactly match the
  * return format above, which sometimes is a common occurrence when
  * working on backend functionality. Make sure to perform any modification
  * to flatten the data into just the expected `PostAuthor[]` return type.
+ * 
  * Ensure to throw errors if present.
- *
- * This method should succeed silently (return nothing).
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request (user to find followers for)
@@ -63,7 +62,7 @@ export const getFollowing = async (
 };
 
 /**
- * TODO: Loads data a profile's post feed.
+ * TODO: Loads data for a profile's post feed.
  *
  * This function should the most recent posts in the
  * `post` database in reverse chronological order
