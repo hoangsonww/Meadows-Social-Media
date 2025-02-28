@@ -25,6 +25,11 @@ import { z } from "zod";
  *
  * Ensure to throw errors if present.
  *
+ * @note Once you implement this method, you should
+ *       be able to view any post you added in your
+ *       database at the route:
+ *       /post/:id
+ *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
  * @param postId: Post data to retrieve.
@@ -63,8 +68,11 @@ export const getPost = async (
  * You can perform casting and validation of any generic
  * data to a Zod model using: ModelName.parse(data)
  *
- *
  * Ensure to throw errors if present.
+ *
+ * @note Once you implement this method, you should
+ *       be able to view recent posts at the route:
+ *       /
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
@@ -107,6 +115,11 @@ export const getFeed = async (
  *
  *
  * Ensure to throw errors if present.
+ *
+ * @note Once you implement this method, you should
+ *       be able to view your recents feed at the route:
+ *       /
+ *       (Navigate to the following tab)
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
@@ -155,6 +168,11 @@ export const getFollowingFeed = async (
  *
  * Ensure to throw errors if present.
  *
+ * @note Once you implement this method, you should
+ *       be able to view your likes feed at the route:
+ *       /
+ *       (Navigate to the likes tab)
+ *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
  * @param cursor: Starting index of the page.
@@ -182,6 +200,10 @@ export const getLikesFeed = async (
  * Ensure to throw errors if present.
  *
  * This method should succeed silently (return nothing).
+ *
+ * @note Once you implement this method, you should
+ *       be able to toggle likes on a post. To test this,
+ *       press the "like" button on any post and refresh.
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
@@ -220,6 +242,10 @@ export const toggleLike = async (
  * Ensure to throw errors if present.
  *
  * This method should succeed silently (return nothing).
+ *
+ * @note Once you implement this method, you should
+ *       be able to create posts on the home page, and the feed
+ *       should update to show the new post.
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.

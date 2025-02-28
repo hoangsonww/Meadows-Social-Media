@@ -23,6 +23,11 @@ import { z } from "zod";
  *
  * Ensure to throw errors if present.
  *
+ * @note Once you implement this method, you should
+ *       be able to view any profile you added in your
+ *       database at the route:
+ *       /profile/:id
+ *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
  * @param profileId: Profile data to retrieve.
@@ -47,8 +52,12 @@ export const getProfileData = async (
  * return format above, which sometimes is a common occurrence when
  * working on backend functionality. Make sure to perform any modification
  * to flatten the data into just the expected `PostAuthor[]` return type.
- * 
+ *
  * Ensure to throw errors if present.
+ *
+ * @note Once you implement this method, you should
+ *       be able to see whether or not you are following a profile on
+ *       the page for any profile.
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request (user to find followers for)
@@ -89,6 +98,10 @@ export const getFollowing = async (
  *
  * Ensure to throw errors if present.
  *
+ * @note Once you implement this method, you should
+ *       see posts on the page for any profile at the route:
+ *      /profile/:id
+ *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
  * @param profileId: Profile ID to retrieve posts for.
@@ -118,6 +131,12 @@ export const getProfilePosts = async (
  * Ensure to throw errors if present.
  *
  * This method should succeed silently (return nothing).
+ *
+ * @note Once you implement this method, you should be able to follow
+ *       and unfollow profiles on the page for any profile. Refresh
+ *       the page to see the changes persist. Test this at the route:
+ *       /profile/:id
+ *
  *
  * @param supabase: Supabase client to use.
  * @param user: Active user making the request.
