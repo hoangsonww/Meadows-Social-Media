@@ -225,24 +225,22 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
               {/* New enhancement to show followers and following count for the currently viewed profile */}
               <div className="flex flex-row justify-between mt-4">
                 <div
-                  className="cursor-pointer flex flex-col items-start"
+                  className="cursor-pointer flex flex-col items-start hover:underline"
                   onClick={() => setFollowersModalOpen(true)}
                 >
-                  <span className="text-2xl font-bold hover:underline">
+                  <span className="text-2xl font-bold">
                     {followers ? followers.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground hover:underline">
-                    Followers
-                  </span>
+                  <span className="text-sm text-muted-foreground">Followers</span>
                 </div>
                 <div
-                  className="cursor-pointer flex flex-col items-end"
+                  className="cursor-pointer flex flex-col items-end hover:underline"
                   onClick={() => setFollowingModalOpen(true)}
                 >
-                  <span className="text-2xl font-bold hover:underline">
+                  <span className="text-2xl font-bold">
                     {following ? following.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground hover:underline">Following</span>
+                  <span className="text-sm text-muted-foreground">Following</span>
                 </div>
               </div>
             </CardContent>
