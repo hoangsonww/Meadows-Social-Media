@@ -86,12 +86,9 @@ export default function LoginPage() {
                 </div>
               </a>
               <h1 className="text-xl font-bold">Log in to Oriole</h1>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <Link href="/signup" className="underline underline-offset-4">
-                  Sign up here!
-                </Link>
-              </div>
+              <p className="text-sm text-center">
+                Welcome back! Log in to your account to continue.
+              </p>
             </div>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
@@ -125,6 +122,12 @@ export default function LoginPage() {
               <Button className="w-full" onClick={logIn}>
                 Login
               </Button>
+              <div className="text-center text-sm">
+                Don&apos;t have an account?{" "}
+                <Link href="/signup" className="underline underline-offset-4">
+                  Sign up here!
+                </Link>
+              </div>
             </div>
           </div>
         </div>

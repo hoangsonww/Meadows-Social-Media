@@ -104,12 +104,9 @@ export default function SignUpPage() {
                 </div>
               </a>
               <h1 className="text-xl font-bold">Welcome to Oriole!</h1>
-              <div className="text-center text-sm">
-                Already have an account?{" "}
-                <Link href="/login" className="underline underline-offset-4">
-                  Log in here!
-                </Link>
-              </div>
+              <p className="text-sm text-center">
+                Sign up for an account to get started.
+              </p>
             </div>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
@@ -175,6 +172,12 @@ export default function SignUpPage() {
               <Button className="w-full" onClick={signUp}>
                 Sign Up
               </Button>
+              <div className="text-center text-sm">
+                Already have an account?{" "}
+                <Link href="/login" className="underline underline-offset-4">
+                  Log in here!
+                </Link>
+              </div>
             </div>
           </div>
         </div>
