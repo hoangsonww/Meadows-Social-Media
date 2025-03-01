@@ -117,8 +117,13 @@ export default function SignUpPage() {
                 <Input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="m@example.com"
+                  placeholder="email@example.com"
                   required
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      signUp();
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-2">
@@ -126,8 +131,13 @@ export default function SignUpPage() {
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Sample Name"
+                  placeholder="Username"
                   required
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      signUp();
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-2">
@@ -140,6 +150,11 @@ export default function SignUpPage() {
                     onChange={(e) => setHandle(e.target.value)}
                     placeholder="ramses"
                     required
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        signUp();
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -150,6 +165,11 @@ export default function SignUpPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      signUp();
+                    }
+                  }}
                 />
               </div>
               <Button className="w-full" onClick={signUp}>

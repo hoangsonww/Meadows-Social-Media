@@ -101,15 +101,25 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="m@example.com"
                   required
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      logIn();
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Password</Label>
-                <Input
+                <Input  
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      logIn();
+                    }
+                  }}
                 />
               </div>
               <Button className="w-full" onClick={logIn}>
