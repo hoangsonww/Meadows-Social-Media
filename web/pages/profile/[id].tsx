@@ -239,7 +239,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   className="cursor-pointer flex flex-col items-end"
                   onClick={() => setFollowingModalOpen(true)}
                 >
-                  <span className="text-2xl font-bold">
+                  <span className="text-2xl font-bold hover:underline">
                     {following ? following.length : 0}
                   </span>
                   <span className="text-sm text-muted-foreground">Following</span>
