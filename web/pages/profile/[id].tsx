@@ -242,7 +242,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   <span className="text-2xl font-bold hover:underline">
                     {following ? following.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground">Following</span>
+                  <span className="text-sm text-muted-foreground hover:underline">Following</span>
                 </div>
               </div>
             </CardContent>
