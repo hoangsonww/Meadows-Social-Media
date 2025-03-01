@@ -231,7 +231,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   <span className="text-2xl font-bold">
                     {followers ? followers.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground">Followers</span>
+                  <span className="text-sm text-muted-foreground hover:underline">
+                    Followers
+                  </span>
                 </div>
                 <div
                   className="cursor-pointer flex flex-col items-end"
