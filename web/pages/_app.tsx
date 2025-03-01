@@ -12,13 +12,12 @@ import Header from "@/components/header";
 import "@/styles/globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AppProps } from "next/app";
+import Head from "next/head";
 
 const queryClient = new QueryClient();
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    // Wrap the app in the query client provider to enable react-query
-    // and the theme provider to enable toggling between light / dark mode.
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
@@ -26,8 +25,16 @@ export default function App({ Component, pageProps }: AppProps) {
         enableSystem
         disableTransitionOnChange
       >
-        {/* The header is then shown above all components. */}
-        <div className="flex h-screen flex-col px-4 overflow-hidden">
+        {/* Head component for setting metadata */}
+        <Head>
+          <title>Oriole - The Social Media App</title>
+          <meta name="description" content="Welcome to Oriole, the ultimate social media app!" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </Head>
+        
+        {/* Here i modified overflow properties as I noticed that sometimes, the post 
+            feed overflow and was hidden from view */}
+        <div className="flex h-screen flex-col px-4 overflow-y-auto overflow-x-hidden">
           <Header />
           <Component {...pageProps} />
         </div>

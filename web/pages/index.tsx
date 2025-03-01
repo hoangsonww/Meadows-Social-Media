@@ -35,7 +35,7 @@ import {
 } from "@/utils/supabase/queries/post";
 import { getProfileData } from "@/utils/supabase/queries/profile";
 import { User } from "@supabase/supabase-js";
-import { InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronsDown,
   ChevronsLeft,
@@ -86,7 +86,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
       : getLikesFeed;
 
   // Infinite query to fetch the posts from the server.
-  // TODO:
+  // TODO: (DONE)
   // Use the `useInfiniteQuery` hook to fetch the posts from the server.
   // - Make sure that the query key array includes the active tab so that
   //   the query is refetched when the tab changes.
@@ -99,14 +99,28 @@ export default function HomePage({ user, profile }: HomePageProps) {
   //       final result of your `useInfiniteQuery` implementation should be:
   //       const { data: posts, fetchNextPage } = useInfiniteQuery({...})
   // -----------------------------------------------------------------------------------
-  type Fake = {
-    data: InfiniteData<z.infer<typeof PostAuthor>[]> | undefined;
-    fetchNextPage: () => Promise<void>;
-  };
-  const { data: posts, fetchNextPage }: Fake = {
-    data: undefined,
-    fetchNextPage: async () => {},
-  };
+  const { data: posts, fetchNextPage } = useInfiniteQuery({
+    queryKey: ["posts", activeTab],
+    // pageParam is the "cursor" or starting index
+    queryFn: async ({ pageParam = 0 }) => {
+      return fetchDataFn(supabase, user, pageParam);
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      // If the last fetched page has fewer than 25 items, we have no more pages
+      if (lastPage.length < 25) {
+        return undefined; // simply return undefined to stop fetching
+      }
+
+      // Otherwise, next page starts at total items fetched so far
+      const totalSoFar = allPages.reduce((sum,page) => sum + page.length,0);
+      
+      // Return the next page starting index
+      return totalSoFar;
+    },
+    // Add initialPageParam to avoid TS error - we don't need it i think
+    initialPageParam: 0,
+  });
+
   // -----------------------------------------------------------------------------------
 
   // Function to hard refresh all React Query queries to get the latest data.
@@ -128,7 +142,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
 
   return (
     <div className="flex flex-row justify-center w-full h-full">
-      <div className="w-[600px] h-screen">
+      <div className="w-[600px] h-screen mb-8">
         {/* Write a Post Card */}
         <Card>
           <CardHeader className="pb-3 pt-3">
@@ -261,7 +275,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
         </Tabs>
 
         {/* Scroll area containing the feed. */}
-        <ScrollArea className="mt-4 h-[70vh] w-full rounded-xl border bg-card text-card-foreground shadow">
+        <ScrollArea className="mt-4 mb-4 h-[70vh] w-full rounded-xl border bg-card text-card-foreground shadow">
           <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
         </ScrollArea>
       </div>

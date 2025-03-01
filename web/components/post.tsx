@@ -30,7 +30,7 @@ export default function PostCard({ user, post }: PostCardProps) {
 
   // Determine the initial value for the `isLiked` hook.
   const likedByUser = post.likes.some(
-    (like) => like.profile_id === post.author.id
+    (like) => like.profile_id === user.id
   );
 
   // Store whether or not the post is liked by the user.

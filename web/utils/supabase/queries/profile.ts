@@ -9,11 +9,11 @@
  */
 
 import { SupabaseClient, User } from "@supabase/supabase-js";
-import { emptyPostAuthor, Following, Post, PostAuthor } from "../models/post";
+import { Post, PostAuthor } from "../models/post";
 import { z } from "zod";
 
 /**
- * TODO: Loads data for a specific profile given its ID.
+ * TODO: (DONE) Loads data for a specific profile given its ID.
  *
  * The data returned should match the format of the
  * `PostAuthor` Zod model.
@@ -38,12 +38,30 @@ export const getProfileData = async (
   user: User,
   profileId: string
 ): Promise<z.infer<typeof PostAuthor>> => {
-  // ... your implementation here ...
-  return PostAuthor.parse(emptyPostAuthor);
+  // Select the single profile data for the given profile ID, 
+  // with all relevant fields
+  const { data, error } = await supabase
+    .from("profile")
+    .select("id, name, handle, avatar_url")
+    .eq("id", profileId)
+    .single();
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Edge case: no data returned even though there was no error
+  if (!data) {
+    throw new Error("No data returned for this profile.");
+  }
+
+  // Parse the data into a PostAuthor object
+  return PostAuthor.parse(data);
 };
 
 /**
- * TODO: Retrieve all of the accounts that the user is following.
+ * TODO: (DONE) Retrieve all of the accounts that the user is following.
  *
  * The data returned should match the format of an array of
  * `PostAuthor` Zod models. Make sure to select the correct
@@ -66,12 +84,44 @@ export const getFollowing = async (
   supabase: SupabaseClient,
   user: User
 ): Promise<z.infer<typeof PostAuthor>[]> => {
-  // ... your implementation here ...
-  return [];
+  // We want to get the 'following_id' from 'follow', then
+  // select all relevant profile fields from that user.
+  const { data, error } = await supabase
+    .from("follow")
+    .select(
+      `
+      following:following_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      )
+    `
+    )
+    .eq("follower_id", user.id);
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Edge case: no data returned even though there was no error
+  if (!data) {
+    return [];
+  }
+
+  // Data is an array of { following: { ...PostAuthorFields } }
+  // So we map it to an array of PostAuthor objects
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const followingList = data.map((item: any) => item.following);
+
+  // Parse the data into an array of PostAuthor objects
+  return PostAuthor.array().parse(followingList);
 };
 
 /**
- * TODO: Loads data for a profile's post feed.
+ * TODO: (DONE) Loads data for a profile's post feed.
  *
  * This function should the most recent posts in the
  * `post` database in reverse chronological order
@@ -114,12 +164,46 @@ export const getProfilePosts = async (
   profileId: string,
   cursor: number
 ): Promise<z.infer<typeof Post>[]> => {
-  // ... your implementation here ...
-  return [];
+  // Select the posts for the given profile ID, with all relevant fields
+  const { data, error } = await supabase
+    .from("post")
+    .select(
+      `
+      id,
+      content,
+      posted_at,
+      attachment_url,
+      author:author_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      ),
+      likes:like (
+        profile_id
+      )
+    `
+    )
+    .eq("author_id", profileId)
+    .order("posted_at", { ascending: false })
+    .range(cursor, cursor + 24);
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Edge case: no data returned even though there was no error
+  if (!data) {
+    return [];
+  }
+
+  // Parse the data into an array of Post objects
+  return Post.array().parse(data);
 };
 
 /**
- * TODO: Toggles whether or not the active user is following
+ * TODO: (DONE) Toggles whether or not the active user is following
  * another profile.
  *
  * If the user has already following the profile, remove the follow
@@ -142,13 +226,48 @@ export const getProfilePosts = async (
  * @param user: Active user making the request.
  * @param profileId: ID of the profile to follow.
  */
-
 export const toggleFollowing = async (
   supabase: SupabaseClient,
   user: User,
   profileId: string
 ): Promise<void> => {
-  // ... your implementation here ...
+  // Check if user already follows this profile
+  const { data, error } = await supabase
+    .from("follow")
+    .select("*")
+    .eq("follower_id", user.id)
+    .eq("following_id", profileId);
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // If already following, remove the follow
+  if (data && data.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("follow")
+      .delete()
+      .match({ follower_id: user.id, following_id: profileId });
+
+    // If there is an error, throw it
+    if (deleteError) {
+      throw new Error(deleteError.message);
+    }
+
+    return;
+  }
+
+  // Otherwise, we add the follow
+  const { error: insertError } = await supabase.from("follow").insert({
+    follower_id: user.id,
+    following_id: profileId,
+  });
+
+  // If there is an error, throw it
+  if (insertError) {
+    throw new Error(insertError.message);
+  }
 };
 
 /**
@@ -187,5 +306,131 @@ export const updateProfilePicture = async (
   user: User,
   file: File | null
 ): Promise<void> => {
-  // ... your implementation here ...
+  // No file means deleting the avatar
+  if (!file) {
+    const { error } = await supabase
+      .from("profile")
+      .update({ avatar_url: null })
+      .eq("id", user.id);
+
+    // If there is an error, throw it
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return;
+  }
+
+  // Upload new file to "avatars" bucket, named by user.id (no extension)
+  const { data: fileData, error: fileError } = await supabase.storage
+    .from("avatars")
+    .upload(user.id, file, {
+      upsert: true,
+    });
+
+  // If there is an error, throw it
+  if (fileError) {
+    throw new Error(fileError.message);
+  }
+
+  // Update the profile avatar_url with the new path
+  if (fileData) {
+    // Update the profile with the new avatar URL
+    const { error: updateError } = await supabase
+      .from("profile")
+      .update({
+        avatar_url: fileData.path,
+      })
+      .eq("id", user.id);
+
+    // If there is an error, throw it
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+  }
+};
+
+/**
+ * I wanna enhance stuff, so I just created a new query for getting
+ * the followers of a profile. 
+ * 
+ * @param supabase The Supabase client to use
+ * @param profileId The ID of the profile to get followers for
+ * @returns An array of PostAuthor objects representing the followers
+ */
+export const getProfileFollowers = async (
+  supabase: SupabaseClient,
+  profileId: string
+): Promise<z.infer<typeof PostAuthor>[]> => {
+  // Select the followers of the given profile ID, with all relevant fields
+  const { data, error } = await supabase
+    .from("follow")
+    .select(
+      `
+      follower: follower_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      )
+    `
+    )
+    .eq("following_id", profileId);
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Edge case: no data returned even though there was no error
+  if (!data) {
+    return [];
+  }
+
+  // Data is an array of { follower: { ...PostAuthorFields } }
+  // So we map it to an array of PostAuthor objects
+  const followersList = data.map((item) => item.follower);
+
+  // Parse the data into an array of PostAuthor objects
+  return PostAuthor.array().parse(followersList);
+};
+
+// I also created a new query for getting the following of a profile.
+// This is similar to the getFollowing query, but it's more specific
+// and only gets the following of a specific profile.
+export const getProfileFollowing = async (
+  supabase: SupabaseClient,
+  profileId: string
+): Promise<z.infer<typeof PostAuthor>[]> => {
+  // Select the following of the given profile ID, with all relevant fields
+  const { data, error } = await supabase
+    .from("follow")
+    .select(
+      `
+      following: following_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      )
+    `
+    )
+    .eq("follower_id", profileId);
+
+  // If there is an error, throw it
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  // Edge case: no data returned even though there was no error
+  if (!data) {
+    return [];
+  }
+
+  // Data is an array of { following: { ...PostAuthorFields } }
+  // So we map it to an array of PostAuthor objects
+  const followingList = data.map((item) => item.following);
+
+  // Parse the data into an array of PostAuthor objects
+  return PostAuthor.array().parse(followingList);
 };

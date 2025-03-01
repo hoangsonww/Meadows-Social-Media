@@ -25,7 +25,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // TODO: Handle the sign in request, alerting the user if there is
+  // TODO: (DONE) Handle the sign in request, alerting the user if there is
   // an error. If the login is successful, the user must be
   // redirected to the home page.
   //
@@ -42,7 +42,33 @@ export default function LoginPage() {
   // query with the key `user_profile` that is found in the `header` component.
 
   const logIn = async () => {
-    // ... your implementation here ...
+    // Check if the email and password fields are filled out first
+    // Validate on the client side before sending the request to the server
+    if (!email || !password) {
+      alert("Please enter both email and password!");
+      return;
+    }
+
+    // Attempt to sign in with the provided email and password
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    // Handle the response from the server
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    // If the user is successfully logged in, reset the user profile query
+    // and redirect the user to the home page
+    if (data.user) {
+      queryClient.resetQueries({ queryKey: ["user_profile"] });
+      router.push("/");
+    } else {
+      alert("Login failed. Please try again.");
+    }
   };
 
   return (

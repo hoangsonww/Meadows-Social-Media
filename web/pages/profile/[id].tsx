@@ -21,6 +21,8 @@ import {
   getProfilePosts,
   toggleFollowing,
   updateProfilePicture,
+  getProfileFollowers,
+  getProfileFollowing
 } from "@/utils/supabase/queries/profile";
 import { GetServerSidePropsContext } from "next";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
@@ -36,10 +38,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import Modal from "@/components/ui/modal";
+
 
 type PublicProfilePageProps = { user: User };
 
 export default function PublicProfilePage({ user }: PublicProfilePageProps) {
+  // States to manage the followers and following modals open/close state
+  const [followersModalOpen, setFollowersModalOpen] = useState<boolean>(false);
+  const [followingModalOpen,setFollowingModalOpen] = useState<boolean>(false);
+  
   // Create necessary hooks for clients and providers.
   const router = useRouter();
   const profileId = router.query.id as string;
@@ -52,6 +60,24 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
     queryFn: async () => {
       return await getProfileData(supabase, user, profileId);
     },
+  });
+
+  // Query for the followers list for the viewed profile
+  const { data: followers } = useQuery({
+    queryKey: ["profile_followers", profileId],
+    queryFn: async () => {
+      return await getProfileFollowers(supabase, profileId);
+    },
+    enabled: !!profileId,
+  });
+
+  // Query for the following list for the viewed profile
+  const { data: following } = useQuery({
+    queryKey: ["profile_following", profileId],
+    queryFn: async () => {
+      return await getProfileFollowing(supabase, profileId);
+    },
+    enabled: !!profileId,
   });
 
   // Create a state to determine if the user is following the profile.
@@ -158,7 +184,13 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                       variant="secondary"
                       size="icon"
                       onClick={() => {
-                        updateProfilePicture(supabase, user, null);
+                        // Here I update it a bit so that it correctly re-renders
+                        // the profile when the user clicks the button.
+                        // Before, it would not update the profile picture to "removed" until
+                        // the user refreshed the page.
+                        updateProfilePicture(supabase, user, null).then(() => {
+                          queryClient.resetQueries();
+                        });
                       }}
                     >
                       <ImageOff />
@@ -189,6 +221,28 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                     </>
                   ))}
               </div>
+
+              {/* New enhancement to show followers and following count for the currently viewed profile */}
+              <div className="flex flex-row justify-between mt-4">
+                <div
+                  className="cursor-pointer flex flex-col items-start"
+                  onClick={() => setFollowersModalOpen(true)}
+                >
+                  <span className="text-2xl font-bold">
+                    {followers ? followers.length : 0}
+                  </span>
+                  <span className="text-sm text-muted-foreground">Followers</span>
+                </div>
+                <div
+                  className="cursor-pointer flex flex-col items-end"
+                  onClick={() => setFollowingModalOpen(true)}
+                >
+                  <span className="text-2xl font-bold">
+                    {following ? following.length : 0}
+                  </span>
+                  <span className="text-sm text-muted-foreground">Following</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -202,6 +256,77 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
           <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
         </ScrollArea>
       </div>
+
+      {/* I wanna enhance stuff, so I'm gonna add 2 modals: one for followers list and one for following list */}
+      <Modal
+        open={followersModalOpen}
+        onClose={() => setFollowersModalOpen(false)}
+        title="Followers"
+        emptyMessage="No followers yet."
+        isEmpty={!followers || followers.length === 0}
+      >
+        <div className="space-y-4">
+          {followers &&
+            followers.map((follower) => (
+              <div
+                key={follower.id}
+                className="flex items-center gap-3 py-2"
+              >
+                <Avatar>
+                  <AvatarImage
+                    src={
+                      supabase.storage
+                        .from("avatars")
+                        .getPublicUrl(follower.avatar_url ?? "").data.publicUrl
+                    }
+                  />
+                  <AvatarFallback>
+                    {follower.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold">{follower.name}</p>
+                  <p className="text-sm text-muted-foreground">@{follower.handle}</p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Modal>
+
+      <Modal
+        open={followingModalOpen}
+        onClose={() => setFollowingModalOpen(false)}
+        title="Following"
+        emptyMessage="This user is not following anyone."
+        isEmpty={!following || following.length === 0}
+      >
+        <div className="space-y-4">
+          {following &&
+            following.map((followed) => (
+              <div
+                key={followed.id}
+                className="flex items-center gap-3 py-2"
+              >
+                <Avatar>
+                  <AvatarImage
+                    src={
+                      supabase.storage
+                        .from("avatars")
+                        .getPublicUrl(followed.avatar_url ?? "").data.publicUrl
+                    }
+                  />
+                  <AvatarFallback>
+                    {followed.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold">{followed.name}</p>
+                  <p className="text-sm text-muted-foreground">@{followed.handle}</p>
+                </div>
+              </div>
+            ))}
+        </div>
+      </Modal>
     </div>
   );
 }

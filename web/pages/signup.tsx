@@ -27,7 +27,7 @@ export default function SignUpPage() {
   const [handle, setHandle] = useState("");
   const [password, setPassword] = useState("");
 
-  // TODO: Handle the sign up request, alerting the user if there is
+  // TODO: (DONE) Handle the sign up request, alerting the user if there is
   // an error. If the signup is successful, the user must be
   // redirected to the home page. When signing up your user, you
   // should also include the `name` and `handle` fields in as extra
@@ -54,7 +54,39 @@ export default function SignUpPage() {
   // query with the key `user_profile` that is found in the `header` component.
 
   const signUp = async () => {
-    // ... your implementation here ...
+    // Check if the email and password fields are filled out first
+    // Validate on the client side before sending the request to the server
+    if (!email || !password || !name || !handle) {
+      alert("Please fill out all fields!");
+      return;
+    }
+
+    // Attempt to sign up with the provided email and password
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          handle,
+        },
+      },
+    });
+
+    // Handle the response from the server
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    // If the user is successfully signed up, reset the user profile query
+    // and redirect the user to the home page
+    if (data.user) {
+      queryClient.resetQueries({ queryKey: ["user_profile"] });
+      router.push("/");
+    } else {
+      alert("Sign-up failed. Please try again.");
+    }
   };
 
   return (
