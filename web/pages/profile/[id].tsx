@@ -223,7 +223,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
               </div>
 
               {/* New enhancement to show followers and following count for the currently viewed profile */}
-              <div className="flex flex-row justify-between mt-4">
+              <div className="flex flex-row justify-between mt-8">
                 <div
                   className="cursor-pointer flex flex-col items-start hover:underline"
                   onClick={() => setFollowersModalOpen(true)}
