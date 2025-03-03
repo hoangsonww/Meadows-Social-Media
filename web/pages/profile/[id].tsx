@@ -47,6 +47,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   // States to manage the followers and following modals open/close state
   const [followersModalOpen, setFollowersModalOpen] = useState<boolean>(false);
   const [followingModalOpen,setFollowingModalOpen] = useState<boolean>(false);
+
+  // Create a reference to the post feed so that we can scroll to the post feed
+  const postFeedRef = useRef<HTMLDivElement>(null);
   
   // Create necessary hooks for clients and providers.
   const router = useRouter();
@@ -222,8 +225,21 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   ))}
               </div>
 
-              {/* New enhancement to show followers and following count for the currently viewed profile */}
+              {/* New enhancement to show post, followers, and following counts for the currently viewed profile */}
               <div className="flex flex-row justify-between mt-8">
+                {/* Post count */}
+                <div
+                  className="cursor-pointer flex flex-col items-start hover:underline"
+                  onClick={() =>
+                    postFeedRef.current?.scrollIntoView({ behavior: "smooth" })
+                  }
+                >
+                  <span className="text-2xl font-bold">
+                    {posts ? posts.pages.reduce((acc, page) => acc + page.length, 0) : 0}
+                  </span>
+                  <span className="text-sm text-muted-foreground">Posts</span>
+                </div>
+                {/* Followers and Following count */}
                 <div
                   className="cursor-pointer flex flex-col items-start hover:underline"
                   onClick={() => setFollowersModalOpen(true)}
@@ -246,7 +262,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
             </CardContent>
           </Card>
         )}
-        <ScrollArea className="mt-4 h-[80vh] w-full rounded-xl border bg-card text-card-foreground shadow">
+        <ScrollArea className="mt-4 h-[80vh] w-full rounded-xl border bg-card text-card-foreground shadow" ref={postFeedRef}>
           <div className="flex flex-row items-center justify-between px-3 py-4">
             <p className="text-lg font-bold">
               {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
