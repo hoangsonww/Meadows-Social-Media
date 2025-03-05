@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 /**
  * Interface for the modal component props
  */
-interface ModalProps {
+type ModalProps = {
   open: boolean;
   onClose: () => void;
   title: string;
