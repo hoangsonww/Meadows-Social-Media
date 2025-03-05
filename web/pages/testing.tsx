@@ -33,9 +33,11 @@ export default function Testing() {
   const TEST_POST_ID = "d62ad56a-7067-4946-8461-f46e3342f3c9";
   const TEST_PROFILE_ID = "39dadd11-f0d9-414e-9c5b-23289ff8ce31";
 
-  // This function calls each query you’ve implemented and logs the result
+  // This function calls each query we've implemented and logs the result
   const runAllTests = async () => {
     console.log("=== RUNNING ALL TESTS ===");
+
+    // ============ USER SETUP ============
 
     // 1) Get current user.
     const { data: userData,error: userError } = await supabase.auth.getUser();
@@ -106,6 +108,7 @@ export default function Testing() {
   // Trigger the test code once the page loads.
   useEffect(() => {
     runAllTests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // VISIT THE BROWSER CONSOLE TO SEE THE RESULTS
