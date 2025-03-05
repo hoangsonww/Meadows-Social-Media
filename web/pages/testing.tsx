@@ -9,7 +9,7 @@
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { useEffect } from "react";
 
-// --- Import everything you want to test ---
+// --- Import everything we want to test ---
 import {
   getPost,
   getFeed,
