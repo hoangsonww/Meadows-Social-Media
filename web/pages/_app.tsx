@@ -28,10 +28,13 @@ export default function App({ Component, pageProps }: AppProps) {
         {/* Head component for setting metadata */}
         <Head>
           <title>Oriole - The Social Media App</title>
-          <meta name="description" content="Welcome to Oriole, the ultimate social media app!" />
+          <meta
+            name="description"
+            content="Welcome to Oriole, the ultimate social media app!"
+          />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
-        
+
         {/* Here i modified overflow properties as I noticed that sometimes, the post 
             feed overflow and was hidden from view */}
         <div className="flex h-screen flex-col px-4 overflow-y-auto overflow-x-hidden">

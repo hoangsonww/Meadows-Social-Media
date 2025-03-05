@@ -82,8 +82,8 @@ export default function HomePage({ user, profile }: HomePageProps) {
     activeTab === HomePageTab.FEED
       ? getFeed
       : activeTab === HomePageTab.FOLLOWING
-      ? getFollowingFeed
-      : getLikesFeed;
+        ? getFollowingFeed
+        : getLikesFeed;
 
   // Infinite query to fetch the posts from the server.
   // TODO: (DONE)
@@ -112,8 +112,8 @@ export default function HomePage({ user, profile }: HomePageProps) {
       }
 
       // Otherwise, next page starts at total items fetched so far
-      const totalSoFar = allPages.reduce((sum,page) => sum + page.length,0);
-      
+      const totalSoFar = allPages.reduce((sum, page) => sum + page.length, 0);
+
       // Return the next page starting index
       return totalSoFar;
     },
@@ -209,7 +209,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                       setSelectedFile(
                         (e.target.files ?? []).length > 0
                           ? e.target.files![0]
-                          : null
+                          : null,
                       )
                     }
                   />
@@ -309,7 +309,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const profile = await getProfileData(
     supabase,
     userData.user,
-    userData.user.id
+    userData.user.id,
   );
 
   // Return the user and profile as props.

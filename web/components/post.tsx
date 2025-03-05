@@ -29,9 +29,7 @@ export default function PostCard({ user, post }: PostCardProps) {
   const router = useRouter();
 
   // Determine the initial value for the `isLiked` hook.
-  const likedByUser = post.likes.some(
-    (like) => like.profile_id === user.id
-  );
+  const likedByUser = post.likes.some((like) => like.profile_id === user.id);
 
   // Store whether or not the post is liked by the user.
   // This should optimistically update when the user clicks the like button

@@ -107,7 +107,7 @@ export default function LoginPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Password</Label>
-                <Input  
+                <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

@@ -30,6 +30,7 @@ export default function Testing() {
 
   // Test values from the database - might not work
   // since I deleted the original test data
+  // You can replace these with your own test data
   const TEST_POST_ID = "d62ad56a-7067-4946-8461-f46e3342f3c9";
   const TEST_PROFILE_ID = "39dadd11-f0d9-414e-9c5b-23289ff8ce31";
 
@@ -40,9 +41,9 @@ export default function Testing() {
     // ============ USER SETUP ============
 
     // 1) Get current user.
-    const { data: userData,error: userError } = await supabase.auth.getUser();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError) {
-      console.log("Error getting user:",userError);
+      console.log("Error getting user:", userError);
       return;
     }
     const user = userData?.user;
@@ -50,7 +51,7 @@ export default function Testing() {
       console.log("No user found. Please log in before testing.");
       return;
     }
-    console.log("Logged-in user:",user.id);
+    console.log("Logged-in user:", user.id);
 
     // ============ PROFILE QUERIES ============
 
@@ -66,14 +67,20 @@ export default function Testing() {
 
     // (C) Get posts for some profile ID
     console.log("--- Testing getProfilePosts ---");
-    const profilePosts = await getProfilePosts(supabase, user, TEST_PROFILE_ID, 0);
+    const profilePosts = await getProfilePosts(
+      supabase,
+      user,
+      TEST_PROFILE_ID,
+      0,
+    );
     console.log("Profile posts (first 25):", profilePosts);
 
     // (D) Toggle following
     console.log("--- Testing toggleFollowing ---");
     await toggleFollowing(supabase, user, TEST_PROFILE_ID);
     console.log("Toggled following on profile", TEST_PROFILE_ID);
-    // If run again, it will just flip back to the previous state.
+    // If we run again, it will just flip back to the previous state.
+    // So, we can run it again to test the toggle functionality multiple times.
 
     // ============ POST QUERIES ============
 
@@ -102,6 +109,7 @@ export default function Testing() {
     await toggleLike(supabase, user, TEST_POST_ID);
     console.log("Toggled like on post", TEST_POST_ID);
 
+    // ============ ALL TESTS COMPLETE ============
     console.log("=== ALL TESTS COMPLETE ===");
   };
 

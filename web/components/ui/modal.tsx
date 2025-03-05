@@ -11,7 +11,7 @@ type ModalProps = {
   children?: ReactNode;
   emptyMessage?: string;
   isEmpty?: boolean;
-}
+};
 
 /**
  * The modal component - very simple and straightforward
@@ -43,11 +43,13 @@ export default function Modal({
       {/* Modal container */}
       <div
         className="relative z-10 w-full max-w-lg rounded-lg bg-card text-card-foreground 
-        shadow-xl transform transition-all duration-300 sm:my-8 sm:w-full hover:shadow-2xl">
+        shadow-xl transform transition-all duration-300 sm:my-8 sm:w-full hover:shadow-2xl"
+      >
         {/* Header */}
         <div
           className="flex items-center justify-between px-4 py-3 border-b
-           border-gray-200 dark:border-gray-700">
+           border-gray-200 dark:border-gray-700"
+        >
           <h2 className="text-xl font-bold">{title}</h2>
           <button
             onClick={onClose}

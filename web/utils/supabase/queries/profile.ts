@@ -36,9 +36,9 @@ import { z } from "zod";
 export const getProfileData = async (
   supabase: SupabaseClient,
   user: User,
-  profileId: string
+  profileId: string,
 ): Promise<z.infer<typeof PostAuthor>> => {
-  // Select the single profile data for the given profile ID, 
+  // Select the single profile data for the given profile ID,
   // with all relevant fields
   const { data, error } = await supabase
     .from("profile")
@@ -82,7 +82,7 @@ export const getProfileData = async (
  */
 export const getFollowing = async (
   supabase: SupabaseClient,
-  user: User
+  user: User,
 ): Promise<z.infer<typeof PostAuthor>[]> => {
   // We want to get the 'following_id' from 'follow', then
   // select all relevant profile fields from that user.
@@ -96,7 +96,7 @@ export const getFollowing = async (
         handle,
         avatar_url
       )
-    `
+    `,
     )
     .eq("follower_id", user.id);
 
@@ -112,7 +112,7 @@ export const getFollowing = async (
 
   // Data is an array of { following: { ...PostAuthorFields } }
   // So we map it to an array of PostAuthor objects
-  
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const followingList = data.map((item: any) => item.following);
 
@@ -162,7 +162,7 @@ export const getProfilePosts = async (
   supabase: SupabaseClient,
   user: User,
   profileId: string,
-  cursor: number
+  cursor: number,
 ): Promise<z.infer<typeof Post>[]> => {
   // Select the posts for the given profile ID, with all relevant fields
   const { data, error } = await supabase
@@ -182,7 +182,7 @@ export const getProfilePosts = async (
       likes:like (
         profile_id
       )
-    `
+    `,
     )
     .eq("author_id", profileId)
     .order("posted_at", { ascending: false })
@@ -229,7 +229,7 @@ export const getProfilePosts = async (
 export const toggleFollowing = async (
   supabase: SupabaseClient,
   user: User,
-  profileId: string
+  profileId: string,
 ): Promise<void> => {
   // Check if user already follows this profile
   const { data, error } = await supabase
@@ -304,7 +304,7 @@ export const toggleFollowing = async (
 export const updateProfilePicture = async (
   supabase: SupabaseClient,
   user: User,
-  file: File | null
+  file: File | null,
 ): Promise<void> => {
   // No file means deleting the avatar
   if (!file) {
@@ -352,15 +352,15 @@ export const updateProfilePicture = async (
 
 /**
  * I wanna enhance stuff, so I just created a new query for getting
- * the followers of a profile. 
- * 
+ * the followers of a profile.
+ *
  * @param supabase The Supabase client to use
  * @param profileId The ID of the profile to get followers for
  * @returns An array of PostAuthor objects representing the followers
  */
 export const getProfileFollowers = async (
   supabase: SupabaseClient,
-  profileId: string
+  profileId: string,
 ): Promise<z.infer<typeof PostAuthor>[]> => {
   // Select the followers of the given profile ID, with all relevant fields
   const { data, error } = await supabase
@@ -373,7 +373,7 @@ export const getProfileFollowers = async (
         handle,
         avatar_url
       )
-    `
+    `,
     )
     .eq("following_id", profileId);
 
@@ -400,7 +400,7 @@ export const getProfileFollowers = async (
 // and only gets the following of a specific profile.
 export const getProfileFollowing = async (
   supabase: SupabaseClient,
-  profileId: string
+  profileId: string,
 ): Promise<z.infer<typeof PostAuthor>[]> => {
   // Select the following of the given profile ID, with all relevant fields
   const { data, error } = await supabase
@@ -413,7 +413,7 @@ export const getProfileFollowing = async (
         handle,
         avatar_url
       )
-    `
+    `,
     )
     .eq("follower_id", profileId);
 

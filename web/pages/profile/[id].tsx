@@ -22,7 +22,7 @@ import {
   toggleFollowing,
   updateProfilePicture,
   getProfileFollowers,
-  getProfileFollowing
+  getProfileFollowing,
 } from "@/utils/supabase/queries/profile";
 import { GetServerSidePropsContext } from "next";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
@@ -40,17 +40,16 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/modal";
 
-
 type PublicProfilePageProps = { user: User };
 
 export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   // States to manage the followers and following modals open/close state
   const [followersModalOpen, setFollowersModalOpen] = useState<boolean>(false);
-  const [followingModalOpen,setFollowingModalOpen] = useState<boolean>(false);
+  const [followingModalOpen, setFollowingModalOpen] = useState<boolean>(false);
 
   // Create a reference to the post feed so that we can scroll to the post feed
   const postFeedRef = useRef<HTMLDivElement>(null);
-  
+
   // Create necessary hooks for clients and providers.
   const router = useRouter();
   const profileId = router.query.id as string;
@@ -88,7 +87,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   // meaning that the user will not have to wait for the server to respond to
   // see the change on the UI.
   const [isFollowing, setIsFollowing] = useState<boolean | undefined>(
-    undefined
+    undefined,
   );
 
   // Set up a useEffect that sets the initial value of the `isFollowing` state
@@ -209,7 +208,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                           setSelectedFile(
                             (e.target.files ?? []).length > 0
                               ? e.target.files![0]
-                              : null
+                              : null,
                           )
                         }
                       />
@@ -235,7 +234,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   }
                 >
                   <span className="text-2xl font-bold">
-                    {posts ? posts.pages.reduce((acc, page) => acc + page.length, 0) : 0}
+                    {posts
+                      ? posts.pages.reduce((acc, page) => acc + page.length, 0)
+                      : 0}
                   </span>
                   <span className="text-sm text-muted-foreground">Posts</span>
                 </div>
@@ -247,7 +248,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   <span className="text-2xl font-bold">
                     {followers ? followers.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground">Followers</span>
+                  <span className="text-sm text-muted-foreground">
+                    Followers
+                  </span>
                 </div>
                 <div
                   className="cursor-pointer flex flex-col items-end hover:underline"
@@ -256,13 +259,18 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   <span className="text-2xl font-bold">
                     {following ? following.length : 0}
                   </span>
-                  <span className="text-sm text-muted-foreground">Following</span>
+                  <span className="text-sm text-muted-foreground">
+                    Following
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
-        <ScrollArea className="mt-4 h-[80vh] w-full rounded-xl border bg-card text-card-foreground shadow" ref={postFeedRef}>
+        <ScrollArea
+          className="mt-4 h-[80vh] w-full rounded-xl border bg-card text-card-foreground shadow"
+          ref={postFeedRef}
+        >
           <div className="flex flex-row items-center justify-between px-3 py-4">
             <p className="text-lg font-bold">
               {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
@@ -284,10 +292,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         <div className="space-y-4">
           {followers &&
             followers.map((follower) => (
-              <div
-                key={follower.id}
-                className="flex items-center gap-3 py-2"
-              >
+              <div key={follower.id} className="flex items-center gap-3 py-2">
                 <Avatar>
                   <AvatarImage
                     src={
@@ -302,7 +307,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                 </Avatar>
                 <div>
                   <p className="font-bold">{follower.name}</p>
-                  <p className="text-sm text-muted-foreground">@{follower.handle}</p>
+                  <p className="text-sm text-muted-foreground">
+                    @{follower.handle}
+                  </p>
                 </div>
               </div>
             ))}
@@ -319,10 +326,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         <div className="space-y-4">
           {following &&
             following.map((followed) => (
-              <div
-                key={followed.id}
-                className="flex items-center gap-3 py-2"
-              >
+              <div key={followed.id} className="flex items-center gap-3 py-2">
                 <Avatar>
                   <AvatarImage
                     src={
@@ -337,7 +341,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                 </Avatar>
                 <div>
                   <p className="font-bold">{followed.name}</p>
-                  <p className="text-sm text-muted-foreground">@{followed.handle}</p>
+                  <p className="text-sm text-muted-foreground">
+                    @{followed.handle}
+                  </p>
                 </div>
               </div>
             ))}

@@ -38,7 +38,7 @@ import { z } from "zod";
 export const getPost = async (
   supabase: SupabaseClient,
   user: User,
-  postId: string
+  postId: string,
 ): Promise<z.infer<typeof Post>> => {
   // Select the post with the given ID (all its data,
   // such as id, content, posted_at, likes, and author)
@@ -59,7 +59,7 @@ export const getPost = async (
       likes:like (
         profile_id
       )
-    `
+    `,
     )
     .eq("id", postId)
     .single();
@@ -116,7 +116,7 @@ export const getPost = async (
 export const getFeed = async (
   supabase: SupabaseClient,
   user: User,
-  cursor: number
+  cursor: number,
 ): Promise<z.infer<typeof Post>[]> => {
   // Select all posts, ordered by posted_at in descending order
   // (most recent first), with author and all its data such as
@@ -138,7 +138,7 @@ export const getFeed = async (
       likes:like (
         profile_id
       )
-    `
+    `,
     )
     .order("posted_at", { ascending: false })
     // Supabase ranges are inclusive, so range(cursor, cursor + 24)
@@ -199,7 +199,7 @@ export const getFeed = async (
 export const getFollowingFeed = async (
   supabase: SupabaseClient,
   user: User,
-  cursor: number
+  cursor: number,
 ): Promise<z.infer<typeof Post>[]> => {
   // First, find all profile IDs the current user is following
   const { data: followingData, error: followError } = await supabase
@@ -239,7 +239,7 @@ export const getFollowingFeed = async (
       likes:like (
         profile_id
       )
-    `
+    `,
     )
     .in("author_id", followingIDs)
     .order("posted_at", { ascending: false })
@@ -305,7 +305,7 @@ export const getFollowingFeed = async (
 export const getLikesFeed = async (
   supabase: SupabaseClient,
   user: User,
-  cursor: number
+  cursor: number,
 ): Promise<z.infer<typeof Post>[]> => {
   // First, find all post IDs the current user has liked
   const { data: likeData, error: likeError } = await supabase
@@ -346,7 +346,7 @@ export const getLikesFeed = async (
       likes:like (
         profile_id
       )
-    `
+    `,
     )
     .in("id", likedPostIDs)
     .order("posted_at", { ascending: false })
@@ -391,7 +391,7 @@ export const getLikesFeed = async (
 export const toggleLike = async (
   supabase: SupabaseClient,
   user: User,
-  postId: string
+  postId: string,
 ): Promise<void> => {
   // Check if user already liked the post first
   const { data, error } = await supabase
@@ -475,7 +475,7 @@ export const createPost = async (
   supabase: SupabaseClient,
   user: User,
   content: string,
-  file: File | null
+  file: File | null,
 ): Promise<void> => {
   // First we insert the post into the database and get the ID
   // of the new post
