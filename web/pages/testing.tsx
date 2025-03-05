@@ -108,6 +108,7 @@ export default function Testing() {
     runAllTests();
   }, []);
 
+  // VISIT THE BROWSER CONSOLE TO SEE THE RESULTS
   return (
     <div className="flex flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
       <h1 className="text-xl font-bold">Oriole App Testing Page</h1>
