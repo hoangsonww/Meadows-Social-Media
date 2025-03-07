@@ -63,6 +63,8 @@ export const getPost = async (
     )
     .eq("id", postId)
     .single();
+  // 'author:author_id' joins and renames the related author data
+  // 'likes:like' fetches and aliases the corresponding likes information
 
   // Handle errors
   if (error) {
@@ -142,7 +144,9 @@ export const getFeed = async (
     )
     .order("posted_at", { ascending: false })
     // Supabase ranges are inclusive, so range(cursor, cursor + 24)
-    .range(cursor, cursor + 24);
+    .range(cursor,cursor + 24);
+  // "author:author_id" joins and renames the related author data
+  // "likes:like" fetches and aliases the corresponding likes information
 
   // Handle errors
   if (error) {
@@ -243,7 +247,9 @@ export const getFollowingFeed = async (
     )
     .in("author_id", followingIDs)
     .order("posted_at", { ascending: false })
-    .range(cursor, cursor + 24);
+    .range(cursor,cursor + 24);
+  // "author:author_id" joins and renames the related author data
+  // "likes:like" fetches and aliases the corresponding likes information
 
   // Handle errors
   if (error) {
@@ -350,7 +356,9 @@ export const getLikesFeed = async (
     )
     .in("id", likedPostIDs)
     .order("posted_at", { ascending: false })
-    .range(cursor, cursor + 24);
+    .range(cursor,cursor + 24);
+  // "author:author_id" joins and renames the related author data
+  // "likes:like" fetches and aliases the corresponding likes information
 
   // Handle errors
   if (error) {
@@ -393,7 +401,9 @@ export const toggleLike = async (
   user: User,
   postId: string,
 ): Promise<void> => {
-  // Check if user already liked the post first
+  // Check if user already liked the post first by selecting
+  // all likes with the user's profile ID and the post ID
+  // and then checking if there's any data returned
   const { data, error } = await supabase
     .from("like")
     .select("*")

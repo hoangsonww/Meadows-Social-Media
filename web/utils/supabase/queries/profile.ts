@@ -85,7 +85,7 @@ export const getFollowing = async (
   user: User,
 ): Promise<z.infer<typeof PostAuthor>[]> => {
   // We want to get the 'following_id' from 'follow', then
-  // select all relevant profile fields from that user.
+  // select all relevant profile fields from that user
   const { data, error } = await supabase
     .from("follow")
     .select(
@@ -98,7 +98,8 @@ export const getFollowing = async (
       )
     `,
     )
-    .eq("follower_id", user.id);
+    .eq("follower_id",user.id);
+  // "'following:following_id' joins and renames the related following user data
 
   // If there is an error, throw it
   if (error) {
@@ -187,7 +188,9 @@ export const getProfilePosts = async (
     .eq("author_id", profileId)
     .order("posted_at", { ascending: false })
     .range(cursor, cursor + 24);
-
+  // "author:author_id" joins and renames the related author user data
+  // "likes:like" joins and renames the related like data
+  
   // If there is an error, throw it
   if (error) {
     throw new Error(error.message);
@@ -367,7 +370,7 @@ export const getProfileFollowers = async (
     .from("follow")
     .select(
       `
-      follower: follower_id (
+      follower:follower_id (
         id,
         name,
         handle,
@@ -407,7 +410,7 @@ export const getProfileFollowing = async (
     .from("follow")
     .select(
       `
-      following: following_id (
+      following:following_id (
         id,
         name,
         handle,

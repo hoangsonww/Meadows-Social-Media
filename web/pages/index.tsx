@@ -112,7 +112,10 @@ export default function HomePage({ user, profile }: HomePageProps) {
       }
 
       // Otherwise, next page starts at total items fetched so far
-      const totalSoFar = allPages.reduce((sum, page) => sum + page.length, 0);
+      let totalSoFar = 0;
+      for (const page of allPages) {
+        totalSoFar += page.length; // Add the number of posts in the current page to the total
+      }
 
       // Return the next page starting index
       return totalSoFar;
