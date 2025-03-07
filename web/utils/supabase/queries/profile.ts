@@ -98,7 +98,7 @@ export const getFollowing = async (
       )
     `,
     )
-    .eq("follower_id",user.id);
+    .eq("follower_id", user.id);
   // "'following:following_id' joins and renames the related following user data
 
   // If there is an error, throw it
@@ -190,7 +190,7 @@ export const getProfilePosts = async (
     .range(cursor, cursor + 24);
   // "author:author_id" joins and renames the related author user data
   // "likes:like" joins and renames the related like data
-  
+
   // If there is an error, throw it
   if (error) {
     throw new Error(error.message);

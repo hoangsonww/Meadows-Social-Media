@@ -144,7 +144,7 @@ export const getFeed = async (
     )
     .order("posted_at", { ascending: false })
     // Supabase ranges are inclusive, so range(cursor, cursor + 24)
-    .range(cursor,cursor + 24);
+    .range(cursor, cursor + 24);
   // "author:author_id" joins and renames the related author data
   // "likes:like" fetches and aliases the corresponding likes information
 
@@ -247,7 +247,7 @@ export const getFollowingFeed = async (
     )
     .in("author_id", followingIDs)
     .order("posted_at", { ascending: false })
-    .range(cursor,cursor + 24);
+    .range(cursor, cursor + 24);
   // "author:author_id" joins and renames the related author data
   // "likes:like" fetches and aliases the corresponding likes information
 
@@ -356,7 +356,7 @@ export const getLikesFeed = async (
     )
     .in("id", likedPostIDs)
     .order("posted_at", { ascending: false })
-    .range(cursor,cursor + 24);
+    .range(cursor, cursor + 24);
   // "author:author_id" joins and renames the related author data
   // "likes:like" fetches and aliases the corresponding likes information
 

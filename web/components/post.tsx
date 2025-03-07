@@ -18,6 +18,7 @@ import { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
+import { useQueryClient } from "@tanstack/react-query";
 
 type PostCardProps = {
   user: User;
@@ -27,6 +28,9 @@ export default function PostCard({ user, post }: PostCardProps) {
   // Create necessary hooks for clients and providers.
   const supabase = createSupabaseComponentClient();
   const router = useRouter();
+
+  // We need the QueryClient to invalidate queries after toggling likes
+  const queryClient = useQueryClient();
 
   // Determine the initial value for the `isLiked` hook.
   const likedByUser = post.likes.some((like) => like.profile_id === user.id);
@@ -74,8 +78,26 @@ export default function PostCard({ user, post }: PostCardProps) {
             <Button
               variant="ghost"
               onClick={async () => {
+                // Toggle the like on Supabase and get the new like status
                 await toggleLike(supabase, user, post.id);
+
+                // Optimistically update local state to reflect the new like status
+                // This is done to avoid needing to refetch the post to update the UI
                 setIsLiked(!isLiked);
+
+                // Here we invalidate the queries for the post and the posts list
+                // so that the UI updates to reflect the new number of likes
+                // This fixes the current situation where the number of likes
+                // doesn't update until the page is refreshed (perhaps you may wanna
+                // update this for the whole class too...)
+                queryClient.invalidateQueries({
+                  queryKey: ["posts"],
+                  refetchType: "all",
+                });
+                queryClient.invalidateQueries({
+                  queryKey: ["post", post.id],
+                  refetchType: "all",
+                });
               }}
             >
               <p
