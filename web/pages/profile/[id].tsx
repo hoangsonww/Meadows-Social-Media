@@ -114,6 +114,12 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing(!isFollowing);
+    queryClient.invalidateQueries({
+      queryKey: ["profile_followers", profileId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["profile_following", profileId],
+    });
   };
 
   // Check if the profile is the user's own profile.
