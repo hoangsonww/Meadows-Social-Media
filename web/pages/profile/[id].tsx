@@ -111,6 +111,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
 
   // Handle the follow button press. This will both call to update the
   // database as well as optimistically update the UI to reflect the new state.
+  // Here, I added a few more query invalidations to update the followers and following lists
+  // as soon as the user follows or unfollows someone. The current situation is that the user
+  // has to refresh the page to see the updated followers and following lists and the counts.
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing(!isFollowing);
