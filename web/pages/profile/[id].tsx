@@ -114,6 +114,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   // Here, I added a few more query invalidations to update the followers and following lists
   // as soon as the user follows or unfollows someone. The current situation is that the user
   // has to refresh the page to see the updated followers and following lists and the counts.
+  // Maybe you can update this for the whole class too... (this was a problem in the original code)
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing(!isFollowing);
@@ -138,7 +139,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   // the profile picture. This will also optimistically update the UI
   // to reflect the new profile picture.
   // The `queryClient.resetQueries()` call will refresh the profile data
-  // so that the new profile picture is displayed.
+  // so that the new profile picture is displayed. The current situation is that
+  // the user has to refresh the page to see the new profile picture. Maybe you
+  // can update this for the whole class too...
   useEffect(() => {
     if (selectedFile) {
       updateProfilePicture(supabase, user, selectedFile).then(() => {
