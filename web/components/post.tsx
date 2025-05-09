@@ -1,12 +1,4 @@
-/**
- * The post component shows an individual post.
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
- */
-
-import { ExternalLink, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { z } from "zod";
@@ -24,31 +16,37 @@ type PostCardProps = {
   user: User;
   post: z.infer<typeof Post>;
 };
+
+/**
+ * Renders an individual post card with author info, content, image, and like action.
+ * Clicking anywhere on the card (except the like button or author link) navigates to the post detail page.
+ */
 export default function PostCard({ user, post }: PostCardProps) {
-  // Create necessary hooks for clients and providers.
   const supabase = createSupabaseComponentClient();
   const router = useRouter();
-
-  // We need the QueryClient to invalidate queries after toggling likes
   const queryClient = useQueryClient();
 
-  // Determine the initial value for the `isLiked` hook.
   const likedByUser = post.likes.some((like) => like.profile_id === user.id);
-
-  // Store whether or not the post is liked by the user.
-  // This should optimistically update when the user clicks the like button
-  // to avoid needing to refetch the post.
-  const [isLiked, setIsLiked] = useState(likedByUser);
-
-  // Helper variable to determine the number of likes to display, which updates
-  // when the user clicks the like button. We need to subtract 1 from the number
-  // of likes if the user has already liked the post, since we are optimistically
-  // updating the state to reflect the new number of likes.
+  const [isLiked, setIsLiked] = useState<boolean>(likedByUser);
   const numberOfLikes = likedByUser ? post.likes.length - 1 : post.likes.length;
 
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await toggleLike(supabase, user, post.id);
+    setIsLiked(!isLiked);
+    queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
+    queryClient.invalidateQueries({
+      queryKey: ["post", post.id],
+      refetchType: "all",
+    });
+  };
+
   return (
-    <div className="flex flex-row w-full gap-3 p-6">
-      <Avatar className="mt-1">
+    <div
+      className="flex flex-row w-full gap-3 p-6 cursor-pointer"
+      onClick={() => router.push(`/post/${post.id}`)}
+    >
+      <Avatar className="flex-shrink-0">
         <AvatarImage
           src={
             supabase.storage
@@ -62,44 +60,21 @@ export default function PostCard({ user, post }: PostCardProps) {
       </Avatar>
       <div className="flex flex-col gap-3 w-full">
         <div className="flex flex-row justify-between items-center">
-          <Link
-            href={`/profile/${post.author.id}`}
-            className="flex flex-row items-center"
-          >
-            <p className="text-primary font-bold hover:underline">
-              {post.author.name}
-            </p>
-            <p className="ml-3 text-muted-foreground  hover:underline">
-              @{post.author.handle}
-            </p>
+          <Link href={`/profile/${post.author.id}`} legacyBehavior>
+            <a
+              className="flex flex-row items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-primary font-bold hover:underline">
+                {post.author.name}
+              </p>
+              <p className="ml-3 text-muted-foreground hover:underline">
+                @{post.author.handle}
+              </p>
+            </a>
           </Link>
           <div className="flex flex-row items-center">
-            {/* Handle likes */}
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                // Toggle the like on Supabase and get the new like status
-                await toggleLike(supabase, user, post.id);
-
-                // Optimistically update local state to reflect the new like status
-                // This is done to avoid needing to refetch the post to update the UI
-                setIsLiked(!isLiked);
-
-                // Here we invalidate the queries for the post and the posts list
-                // so that the UI updates to reflect the new number of likes
-                // This fixes the current situation where the number of likes
-                // doesn't update until the page is refreshed (perhaps you may wanna
-                // update this for the whole class too...)
-                queryClient.invalidateQueries({
-                  queryKey: ["posts"],
-                  refetchType: "all",
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["post", post.id],
-                  refetchType: "all",
-                });
-              }}
-            >
+            <Button variant="ghost" onClick={handleLike}>
               <p
                 className={`text-sm ${
                   isLiked ? "text-pink-600" : "text-muted-foreground"
@@ -107,21 +82,11 @@ export default function PostCard({ user, post }: PostCardProps) {
               >
                 {numberOfLikes + (isLiked ? 1 : 0)}
               </p>
-              <Heart className={`${isLiked ? "text-pink-600" : ""}`} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                router.push(`/post/${post.id}`);
-              }}
-            >
-              <ExternalLink className="text-muted-foreground" />
+              <Heart className={isLiked ? "text-pink-600" : ""} />
             </Button>
           </div>
         </div>
         <div className="flex flex-col gap-4 my-2 min-w-full">
-          {/* Show the post's image, if it exists. */}
           {post.attachment_url && (
             <Image
               className="rounded-xl"
@@ -130,7 +95,7 @@ export default function PostCard({ user, post }: PostCardProps) {
                   .from("images")
                   .getPublicUrl(post.attachment_url).data.publicUrl
               }
-              alt="Image"
+              alt="Attachment"
               width={600}
               height={600}
             />

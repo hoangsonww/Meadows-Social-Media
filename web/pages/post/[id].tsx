@@ -1,86 +1,183 @@
-/**
- * This page shows individual posts to the user based on its ID.
- *
- * This page is protected to only show to logged in users. If the user is not
- * logged in, they are redirected to the login page.
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
- */
-
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
-import { GetServerSidePropsContext } from "next";
-import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { User } from "@supabase/supabase-js";
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft, Share2, Copy, Mail, Bookmark, Printer } from "lucide-react";
+import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { getPost } from "@/utils/supabase/queries/post";
 import PostCard from "@/components/post";
-import { Card } from "@/components/ui/card";
+import { GetServerSidePropsContext } from "next";
+import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
+import { User } from "@supabase/supabase-js";
 
 type PostPageProps = { user: User };
 
 export default function PostPage({ user }: PostPageProps) {
-  // Create necessary hooks for clients and providers.
   const router = useRouter();
   const supabase = createSupabaseComponentClient();
-
-  // Get the post ID to work with from the dynamic URL.
   const postId = router.query.id as string;
 
-  // Fetch the data for the single post using the post ID.
-  const { data: post } = useQuery({
+  const { data: post, isLoading } = useQuery({
     queryKey: ["post", postId],
-    queryFn: async () => {
-      return await getPost(supabase, user, postId);
-    },
+    queryFn: async () => await getPost(supabase, user, postId),
+    enabled: !!postId,
   });
 
+  const [copied, setCopied] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+
+  // initialize bookmark state
+  useEffect(() => {
+    if (!postId) return;
+    const list = JSON.parse(localStorage.getItem("bookmarkedPosts") || "[]");
+    setBookmarked(list.includes(postId));
+  }, [postId]);
+
+  const toggleBookmark = () => {
+    const list: string[] = JSON.parse(
+      localStorage.getItem("bookmarkedPosts") || "[]",
+    );
+    let message: string;
+    if (bookmarked) {
+      const updated = list.filter((id) => id !== postId);
+      localStorage.setItem("bookmarkedPosts", JSON.stringify(updated));
+      setBookmarked(false);
+      message = "Removed bookmark";
+    } else {
+      list.push(postId);
+      localStorage.setItem("bookmarkedPosts", JSON.stringify(list));
+      setBookmarked(true);
+      message = "Bookmarked!";
+    }
+    setToast(message);
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(currentUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: post?.content.slice(0, 50) || "Check this post",
+          url: currentUrl,
+        });
+      } catch {}
+    } else {
+      setToast("Share not supported on this browser");
+      setTimeout(() => setToast(null), 2000);
+    }
+  };
+
+  const handleEmailLink = () => {
+    const subject = encodeURIComponent("Check out this post");
+    const body = encodeURIComponent(
+      `I thought you might like this: ${currentUrl}`,
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handlePrint = () => window.print();
+
+  if (isLoading) {
+    return <p className="text-center mt-8">Loading post...</p>;
+  }
+
   return (
-    <div className="flex flex-row justify-center w-full h-full">
-      <div className="w-[600px] h-screen">
-        <div className="pb-3">
-          <Button variant="ghost" onClick={() => router.push("/")}>
-            <ArrowLeft /> Back to Feed
+    <div className="flex flex-col w-full min-h-screen bg-background p-4 space-y-6">
+      <div className="flex items-center justify-between w-full mb-4">
+        <Button
+          variant="ghost"
+          className="transition-transform duration-200 hover:scale-105"
+          onClick={() => router.push("/")}
+        >
+          <ArrowLeft /> Back to Feed
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={handleCopyLink}
+          >
+            <Copy />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={handleShare}
+          >
+            <Share2 />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={handleEmailLink}
+          >
+            <Mail />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={toggleBookmark}
+          >
+            <Bookmark
+              className={
+                bookmarked ? "fill-current text-primary stroke-none" : ""
+              }
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={handlePrint}
+          >
+            <Printer />
           </Button>
         </div>
-        {post && (
-          <Card>
-            <PostCard user={user} post={post} />
-          </Card>
-        )}
       </div>
+      {post && (
+        <Card className="w-full rounded-2xl shadow-lg transition-shadow duration-300 hover:shadow-2xl">
+          <PostCard user={user} post={post} />
+        </Card>
+      )}
+      {copied && (
+        <div className="fixed bottom-4 right-4 bg-muted px-4 py-2 rounded-full shadow-md transition-opacity duration-300">
+          Link copied!
+        </div>
+      )}
+      {toast && (
+        <div className="fixed bottom-16 right-4 bg-muted px-4 py-2 rounded-full shadow-md transition-opacity duration-300">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
 
-// The `getServerSideProps` function is used to fetch the user data and on
-// the server side before rendering the page to both pre-load the Supabase
-// user data. If the user is not logged in, we can catch this here and
-// redirect the user to the login page.
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const supabase = createSupabaseServerClient(context);
-  // Create the supabase context that works specifically on the server and
-  // pass in the context.
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  // If the user is not logged in, redirect them to the login page.
   if (userError || !userData) {
     return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
+      redirect: { destination: "/login", permanent: false },
     };
   }
 
-  // Return the user as props.
   return {
-    props: {
-      user: userData.user,
-    },
+    props: { user: userData.user },
   };
 }

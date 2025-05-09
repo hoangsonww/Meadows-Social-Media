@@ -1,16 +1,7 @@
-/**
- * This is the home page of the application, showing the feed of posts and
- * the ability to create new posts.
- *
- * This page is protected to only show to logged in users. If the user is not
- * logged in, they are redirected to the login page.
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
- */
-
-import PostFeed from "@/components/feed";
+import { Fragment, useRef, useState } from "react";
+import { InView } from "react-intersection-observer";
+import PostCard from "@/components/post";
+import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
@@ -45,10 +35,8 @@ import {
   X,
 } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
-import { useRef, useState } from "react";
 import { z } from "zod";
 
-// Define the tabs for the home page as a enum for easy comparisons.
 enum HomePageTab {
   FEED = "Feed",
   FOLLOWING = "Following",
@@ -56,28 +44,21 @@ enum HomePageTab {
 }
 
 type HomePageProps = { user: User; profile: z.infer<typeof PostAuthor> };
+
+/**
+ * HomePage component renders the post creation UI and inline infinite-scrolling posts,
+ * with smooth hover effects, animations, full-width layout, and enhanced border radius.
+ */
 export default function HomePage({ user, profile }: HomePageProps) {
-  // Create necessary hooks for clients and providers.
   const queryClient = useQueryClient();
   const supabase = createSupabaseComponentClient();
 
-  // Create state for the selected tab.
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FEED);
-
-  // Create states for posting.
   const [expandPostDraft, setExpandPostDraft] = useState<boolean>(true);
   const [postDraftText, setPostDraftText] = useState<string>("");
-
-  // Create states to handle selecting and uploading files.
-
-  // The input ref points to the hidden HTML file input element that
-  // can be "clicked" to open the file picker.
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  // The selected file is the file that the user has selected to upload.
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Determine which data fetching function should be used in the post loader
-  // based on the actively selected tab.
   const fetchDataFn =
     activeTab === HomePageTab.FEED
       ? getFeed
@@ -85,57 +66,24 @@ export default function HomePage({ user, profile }: HomePageProps) {
         ? getFollowingFeed
         : getLikesFeed;
 
-  // Infinite query to fetch the posts from the server.
-  // TODO: (DONE)
-  // Use the `useInfiniteQuery` hook to fetch the posts from the server.
-  // - Make sure that the query key array includes the active tab so that
-  //   the query is refetched when the tab changes.
-  // - Ensure that you use the `getNextPageParam` function to determine
-  //   the next page to fetch.
-  //   See: https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries
-
-  // NOTE: Replace the code below with your implementation - this dummy code is just to
-  //       show the structure of the data and prevent type errors down the road. The
-  //       final result of your `useInfiniteQuery` implementation should be:
-  //       const { data: posts, fetchNextPage } = useInfiniteQuery({...})
-  // -----------------------------------------------------------------------------------
-  const { data: posts, fetchNextPage } = useInfiniteQuery({
+  const {
+    data: posts,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["posts", activeTab],
-    // pageParam is the "cursor" or starting index
-    queryFn: async ({ pageParam = 0 }) => {
-      return fetchDataFn(supabase, user, pageParam);
-    },
+    queryFn: async ({ pageParam = 0 }) =>
+      fetchDataFn(supabase, user, pageParam),
     getNextPageParam: (lastPage, allPages) => {
-      // If the last fetched page has fewer than 25 items, we have no more pages
-      if (lastPage.length < 25) {
-        return undefined; // simply return undefined to stop fetching
-      }
-
-      // Otherwise, next page starts at total items fetched so far
-      let totalSoFar = 0;
-      for (const page of allPages) {
-        totalSoFar += page.length; // Add the number of posts in the current page to the total
-      }
-
-      // Return the next page starting index
-      return totalSoFar;
+      if (lastPage.length < 25) return undefined;
+      return allPages.reduce((sum, page) => sum + page.length, 0);
     },
-    // Add initialPageParam to avoid TS error - we don't need it i think
     initialPageParam: 0,
   });
 
-  // -----------------------------------------------------------------------------------
+  const refresh = () => queryClient.resetQueries();
 
-  // Function to hard refresh all React Query queries to get the latest data.
-  // NOTE: This is not best practice. Later, we will use a tool talled `tRPC`
-  // whose APIs make this a bit easier to do and also to follow.
-  const refresh = () => {
-    queryClient.resetQueries();
-  };
-
-  // Function to publish a post.
-  // Publishing a post also should clear any post draft text, remove any selected
-  // file, and hard refresh the feed.
   const publishPost = async () => {
     await createPost(supabase, user, postDraftText, selectedFile);
     setPostDraftText("");
@@ -144,17 +92,19 @@ export default function HomePage({ user, profile }: HomePageProps) {
   };
 
   return (
-    <div className="flex flex-row justify-center w-full h-full">
-      <div className="w-[600px] h-screen mb-8">
-        {/* Write a Post Card */}
-        <Card>
-          <CardHeader className="pb-3 pt-3">
-            <div className="flex flex-row items-center justify-between">
-              <CardTitle>Write a Post</CardTitle>
+    <div className="scroll-smooth flex flex-col items-center w-full min-h-screen px-4">
+      <div className="w-full mb-8">
+        <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-102 mt-4">
+          <CardHeader className="py-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="transition-colors ease-in-out duration-300 hover:text-primary">
+                Write a Post
+              </CardTitle>
               {expandPostDraft ? (
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="transition-transform ease-in-out duration-300 hover:scale-102"
                   onClick={() => setExpandPostDraft(false)}
                 >
                   <ChevronsDown />
@@ -163,6 +113,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="transition-transform ease-in-out duration-300 hover:scale-102"
                   onClick={() => setExpandPostDraft(true)}
                 >
                   <ChevronsLeft />
@@ -170,12 +121,11 @@ export default function HomePage({ user, profile }: HomePageProps) {
               )}
             </div>
           </CardHeader>
-          {/* Only show the body of the card if the post draft is expanded. */}
           {expandPostDraft && (
             <>
               <CardContent className="space-y-2 pb-3">
-                <div className="flex flex-row w-full gap-3">
-                  <Avatar className="mt-1">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <Avatar className="mt-1 flex-shrink-0 rounded-full transition-transform ease-in-out duration-300 hover:scale-102">
                     <AvatarImage
                       src={
                         supabase.storage
@@ -190,19 +140,13 @@ export default function HomePage({ user, profile }: HomePageProps) {
                   <Textarea
                     value={postDraftText}
                     onChange={(e) => setPostDraftText(e.target.value)}
-                    className="h-28"
-                    placeholder="Post your thoughts here!"
-                  ></Textarea>
+                    className="flex-1 h-28 rounded-2xl transition-shadow ease-in-out duration-300 focus:shadow-outline"
+                    placeholder="What's on your mind? Share your thoughts, ideas, or experiences with the world!"
+                  />
                 </div>
               </CardContent>
               <CardFooter className="pb-3">
-                <div className="flex flex-row gap-3 ml-auto">
-                  {/* File inputs are handled here. */}
-                  {/* 
-                  This hidden input provides us the functionality to handle selecting
-                  new  pages. This input only accepts images, and when a file is selected,
-                  the file is stored in the `selectedFile` state.
-                  */}
+                <div className="flex flex-wrap gap-3 justify-end">
                   <Input
                     className="hidden"
                     type="file"
@@ -210,8 +154,8 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     accept="image/*"
                     onChange={(e) =>
                       setSelectedFile(
-                        (e.target.files ?? []).length > 0
-                          ? e.target.files![0]
+                        e.target.files && e.target.files[0]
+                          ? e.target.files[0]
                           : null,
                       )
                     }
@@ -219,10 +163,11 @@ export default function HomePage({ user, profile }: HomePageProps) {
                   {selectedFile ? (
                     <Button
                       variant="secondary"
+                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
                       onClick={() => setSelectedFile(null)}
                     >
                       <ImagePlus />
-                      <p className="text-sm max-w-[300px] overflow-hidden text-ellipsis">
+                      <p className="text-sm max-w-xs truncate">
                         {selectedFile.name}
                       </p>
                       <X />
@@ -231,17 +176,14 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     <Button
                       variant="secondary"
                       size="icon"
-                      onClick={() => {
-                        if (fileInputRef && fileInputRef.current)
-                          fileInputRef.current.click();
-                      }}
+                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
+                      onClick={() => fileInputRef.current?.click()}
                     >
                       <ImagePlus />
                     </Button>
                   )}
-                  {/* The button to publish the post is only enabled when tex
-                   has been entered into the text area. */}
                   <Button
+                    className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
                     onClick={publishPost}
                     disabled={postDraftText.length === 0}
                   >
@@ -253,23 +195,36 @@ export default function HomePage({ user, profile }: HomePageProps) {
           )}
         </Card>
 
-        {/* Display all three tabs for each feed + the refresh button. */}
-        {/* Update the `activeTab` state when the tab changes. */}
         <Tabs
-          value={activeTab.toString()}
-          onValueChange={(tab) => setActiveTab(tab)}
+          value={activeTab}
+          onValueChange={setActiveTab}
           className="w-full mt-8"
         >
-          <div className="flex flex-row w-100 gap-2">
-            <TabsList className="grid w-full grid-cols-3 grow">
-              <TabsTrigger value={HomePageTab.FEED}>Feed</TabsTrigger>
-              <TabsTrigger value={HomePageTab.FOLLOWING}>Following</TabsTrigger>
-              <TabsTrigger value={HomePageTab.LIKED}>Liked</TabsTrigger>
+          <div className="flex items-center justify-between gap-2">
+            <TabsList className="grid grid-cols-3 flex-1 rounded-3xl">
+              <TabsTrigger
+                value={HomePageTab.FEED}
+                className="transition-colors ease-in-out duration-300 hover:text-primary"
+              >
+                Feed
+              </TabsTrigger>
+              <TabsTrigger
+                value={HomePageTab.FOLLOWING}
+                className="transition-colors ease-in-out duration-300 hover:text-primary"
+              >
+                Following
+              </TabsTrigger>
+              <TabsTrigger
+                value={HomePageTab.LIKED}
+                className="transition-colors ease-in-out duration-300 hover:text-primary"
+              >
+                Liked
+              </TabsTrigger>
             </TabsList>
             <Button
-              className="rounded-lg"
               variant="secondary"
               size="icon"
+              className="rounded-full transition-transform ease-in-out duration-300 hover:scale-102"
               onClick={refresh}
             >
               <RotateCcw />
@@ -277,49 +232,55 @@ export default function HomePage({ user, profile }: HomePageProps) {
           </div>
         </Tabs>
 
-        {/* Scroll area containing the feed. */}
-        <ScrollArea className="mt-4 mb-4 h-[70vh] w-full rounded-xl border bg-card text-card-foreground shadow">
-          <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
-        </ScrollArea>
+        {/* Inline post list for natural scrolling */}
+        <div className="mt-4 space-y-6">
+          {posts?.pages.map((page, pi) =>
+            page.map((post, idx) => (
+              <Fragment key={post.id}>
+                <div className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-102">
+                  <PostCard user={user} post={post} />
+                </div>
+                <Separator className="transition-colors ease-in-out duration-300 hover:bg-muted-foreground" />
+                {/* Sentinel for infinite scroll */}
+                {pi === posts.pages.length - 1 &&
+                  idx === page.length - 1 &&
+                  hasNextPage && (
+                    <InView onChange={(inView) => inView && fetchNextPage()} />
+                  )}
+              </Fragment>
+            )),
+          )}
+          {isFetchingNextPage && (
+            <p className="text-center transition-opacity ease-in-out duration-300 animate-pulse">
+              Loading...
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// The `getServerSideProps` function is used to fetch the user data and on
-// the server side before rendering the page to both pre-load the Supabase
-// user and profile data. If the user is not logged in, we can catch this
-// here and redirect the user to the login page.
+/**
+ * getServerSideProps fetches user and profile before rendering.
+ */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  // Create the supabase context that works specifically on the server and
-  // pass in the context.
   const supabase = createSupabaseServerClient(context);
-
-  // Attempt to load the user data
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  // If the user is not logged in, redirect them to the login page.
   if (userError || !userData) {
     return {
-      redirect: {
-        destination: "/login",
-        permanent: false,
-      },
+      redirect: { destination: "/login", permanent: false },
     };
   }
 
-  // Load the profile data
   const profile = await getProfileData(
     supabase,
     userData.user,
     userData.user.id,
   );
 
-  // Return the user and profile as props.
   return {
-    props: {
-      user: userData.user,
-      profile: profile,
-    },
+    props: { user: userData.user, profile },
   };
 }

@@ -1,13 +1,3 @@
-/**
- * This file defines the Supabase client that is used on
- * the *server side* of the application (for example,
- * from within `getServerSideProps`).
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
- */
-
 import { type GetServerSidePropsContext } from "next";
 import { createServerClient, serializeCookieHeader } from "@supabase/ssr";
 

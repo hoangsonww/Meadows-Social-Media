@@ -1,46 +1,30 @@
-/**
- * This is the login page of the application, allowing users to log in.
- *
- * @author Ajay Gandecha <agandecha@unc.edu>
- * @license MIT
- * @see https://comp426-25s.github.io/
- */
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bird } from "lucide-react";
+import { Leaf } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
 export default function LoginPage() {
-  // Create necessary hooks for clients and providers.
   const router = useRouter();
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
-  // Create states for each field in the form.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // TODO: (DONE) Handle the sign in request, alerting the user if there is
-  // an error. If the login is successful, the user must be
-  // redirected to the home page.
-  //
-  // Also, the `user_profile` query in React Query should hard refreshed
-  // so that the header can correctly display newly logged-in user. Since
-  // this is a bit hard to figure out, I will give you the line of code
-  // that does this:
-  //
-  // ```ts
-  // queryClient.resetQueries({ queryKey: ["user_profile"] });
-  // ```
-  //
-  // This code calls on the global React Query client to reset the specific
-  // query with the key `user_profile` that is found in the `header` component.
-
+  /**
+   * This function handles the login process for the user.
+   * It checks if the email and password fields are filled out,
+   * and if so, it attempts to sign in the user using Supabase's
+   * authentication method. If the login is successful, it resets
+   * the user profile query and redirects the user to the home page.
+   * If there is an error, it alerts the user with the error message.
+   *
+   * @returns - void
+   */
   const logIn = async () => {
     // Check if the email and password fields are filled out first
     // Validate on the client side before sending the request to the server
@@ -82,10 +66,10 @@ export default function LoginPage() {
                 className="flex flex-col items-center gap-2 font-medium"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-md">
-                  <Bird className="size-6" />
+                  <Leaf className="size-6" />
                 </div>
               </a>
-              <h1 className="text-xl font-bold">Log in to Oriole</h1>
+              <h1 className="text-xl font-bold">Log in to Meadow</h1>
               <p className="text-sm text-center">
                 Welcome back! Log in to your account to continue.
               </p>
