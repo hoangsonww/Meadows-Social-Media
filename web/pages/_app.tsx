@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { useTheme } from "next-themes";
 import Header from "@/components/header";
 import "@/styles/globals.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +9,23 @@ import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
 
 const queryClient = new QueryClient();
+
+function MetaUpdater() {
+  const { resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      // use resolvedTheme to pick up system/light/dark changes immediately
+      meta.setAttribute(
+        "content",
+        resolvedTheme === "dark" ? "#000000" : "#ffffff",
+      );
+    }
+  }, [resolvedTheme]);
+
+  return null;
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -55,7 +74,8 @@ export default function App({ Component, pageProps }: AppProps) {
           <link rel="manifest" href="/site.webmanifest" />
           <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#4F46E5" />
           <meta name="msapplication-TileColor" content="#4F46E5" />
-          <meta name="theme-color" content="#1F2937" />
+          {/* initial placeholder; updated immediately on theme change */}
+          <meta name="theme-color" content="#000000" />
 
           {/* Open Graph / Facebook */}
           <meta property="og:type" content="website" />
@@ -94,6 +114,9 @@ export default function App({ Component, pageProps }: AppProps) {
           {/* Canonical */}
           <link rel="canonical" href="https://meadows.vercel.app/" />
         </Head>
+
+        {/* dynamically update theme-color as soon as theme toggles */}
+        <MetaUpdater />
 
         <div className="flex h-screen flex-col overflow-y-auto overflow-x-hidden">
           <Header />
