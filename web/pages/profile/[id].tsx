@@ -1,7 +1,24 @@
+// pages/profile/[id].tsx
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRouter } from "next/router";
+import { GetServerSidePropsContext } from "next";
+import { User } from "@supabase/supabase-js";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { ArrowLeft, Bell, BellOff, ImageOff, ImageUp } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Bell, BellOff, ImageOff, ImageUp } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+
+import PostFeed from "@/components/feed";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import {
   getFollowing,
@@ -12,95 +29,103 @@ import {
   getProfileFollowers,
   getProfileFollowing,
 } from "@/utils/supabase/queries/profile";
-import { GetServerSidePropsContext } from "next";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
-import { useRouter } from "next/router";
-import { User } from "@supabase/supabase-js";
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import PostFeed from "@/components/feed";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { useEffect, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import Modal from "@/components/ui/modal";
+
+interface ModalProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  isEmpty?: boolean;
+  emptyMessage?: string;
+  children: React.ReactNode;
+}
+
+function Modal({
+  open,
+  onClose,
+  title,
+  isEmpty = false,
+  emptyMessage = "",
+  children,
+}: ModalProps) {
+  if (!open) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-50 w-full max-w-md max-h-[95vh] overflow-y-auto rounded-xl bg-background shadow-xl p-4">
+        <h2 className="mb-4 text-lg font-semibold">{title}</h2>
+        {isEmpty ? (
+          <p className="text-center text-muted-foreground">{emptyMessage}</p>
+        ) : (
+          children
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 type PublicProfilePageProps = { user: User };
 
-/**
- * PublicProfilePage renders a user's public profile, including avatar, follow button,
- * statistics, posts, and modals for followers and following lists.
- *
- * @param {{ user: User }} props - Component props.
- * @param {User} props.user - The current authenticated Supabase user.
- * @returns {JSX.Element} The public profile page.
- */
 export default function PublicProfilePage({ user }: PublicProfilePageProps) {
-  const [followersModalOpen, setFollowersModalOpen] = useState<boolean>(false);
-  const [followingModalOpen, setFollowingModalOpen] = useState<boolean>(false);
+  const [followersModalOpen, setFollowersModalOpen] = useState(false);
+  const [followingModalOpen, setFollowingModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isFollowing, setIsFollowing] = useState<boolean | undefined>(undefined);
+
   const postFeedRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const profileId = router.query.id as string;
+
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", profileId],
-    queryFn: async () => getProfileData(supabase, user, profileId),
+    queryFn: () => getProfileData(supabase, user, profileId),
   });
 
   const { data: followers } = useQuery({
     queryKey: ["profile_followers", profileId],
-    queryFn: async () => getProfileFollowers(supabase, profileId),
+    queryFn: () => getProfileFollowers(supabase, profileId),
     enabled: !!profileId,
   });
 
   const { data: following } = useQuery({
     queryKey: ["profile_following", profileId],
-    queryFn: async () => getProfileFollowing(supabase, profileId),
+    queryFn: () => getProfileFollowing(supabase, profileId),
     enabled: !!profileId,
   });
 
-  const [isFollowing, setIsFollowing] = useState<boolean | undefined>(
-    undefined,
-  );
-
   useEffect(() => {
-    getFollowing(supabase, user).then((list) => {
-      setIsFollowing(list.some((f) => f.id === profileId));
-    });
+    getFollowing(supabase, user).then((list) =>
+      setIsFollowing(list.some((f) => f.id === profileId)),
+    );
   }, [supabase, user, profileId]);
 
   const {
     data: posts,
-    fetchNextPage: fetchNextPage,
+    fetchNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ["profile_posts", profileId],
-    queryFn: async ({ pageParam = 0 }) =>
-      getProfilePosts(supabase, user, profileId, pageParam),
     initialPageParam: 0,
+    queryFn: ({ pageParam = 0 }) =>
+      getProfilePosts(supabase, user, profileId, pageParam),
     getNextPageParam: (lastPage, pages) =>
       lastPage.length < 25 ? undefined : pages.length * lastPage.length,
   });
 
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
-    setIsFollowing(!isFollowing);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
+    setIsFollowing((prev) => !prev);
     queryClient.invalidateQueries(["profile_followers", profileId]);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     queryClient.invalidateQueries(["profile_following", profileId]);
   };
-
-  const isPersonalPage = user.id === profileId;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (selectedFile) {
@@ -109,11 +134,13 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         queryClient.resetQueries();
       });
     }
-  }, [queryClient, selectedFile, supabase, user]);
+  }, [selectedFile, supabase, user, queryClient]);
+
+  const isPersonalPage = user.id === profileId;
 
   return (
-    <div className="w-full min-h-screen bg-background p-4 space-y-6">
-      <div className="flex items-center mb-4">
+    <div className="min-h-screen w-full space-y-6 bg-background p-4">
+      <div className="mb-4 flex items-center">
         <Button
           variant="ghost"
           className="transition-transform duration-200 hover:scale-105"
@@ -141,10 +168,11 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-primary font-bold">{profile.name}</p>
+                  <p className="font-bold text-primary">{profile.name}</p>
                   <p className="text-muted-foreground">@{profile.handle}</p>
                 </div>
               </div>
+
               {!isPersonalPage && isFollowing !== undefined && (
                 <Button
                   variant={isFollowing ? "secondary" : "default"}
@@ -155,6 +183,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   {isFollowing ? "Unfollow" : "Follow"}
                 </Button>
               )}
+
               {isPersonalPage && (
                 <>
                   {profile.avatar_url ? (
@@ -173,16 +202,12 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   ) : (
                     <>
                       <Input
-                        className="hidden"
-                        type="file"
                         ref={fileInputRef}
+                        type="file"
                         accept="image/*"
+                        className="hidden"
                         onChange={(e) =>
-                          setSelectedFile(
-                            e.target.files && e.target.files[0]
-                              ? e.target.files[0]
-                              : null,
-                          )
+                          setSelectedFile(e.target.files?.[0] ?? null)
                         }
                       />
                       <Button
@@ -197,7 +222,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap justify-between gap-4 mt-6">
+            <div className="mt-6 flex flex-wrap justify-between gap-4">
               {[
                 {
                   label: "Posts",
@@ -218,11 +243,13 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
               ].map(({ label, count, onClick }) => (
                 <div
                   key={label}
-                  className="cursor-pointer flex flex-col items-center transition-transform duration-200 hover:scale-105"
                   onClick={onClick}
+                  className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
                 >
                   <span className="text-2xl font-bold">{count}</span>
-                  <span className="text-sm text-muted-foreground">{label}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -231,17 +258,17 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
       )}
 
       <ScrollArea
-        className="w-full h-auto rounded-xl transition-shadow duration-200 hover:shadow-lg"
         ref={postFeedRef}
+        className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg"
       >
-        <div className="py-4 px-2">
-          <p className="text-lg font-bold mb-2">
+        <div className="px-2 py-4">
+          <p className="mb-2 text-lg font-bold">
             {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
           </p>
           <Separator />
           <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
           {isFetchingNextPage && (
-            <p className="text-center py-4 opacity-70">Loading more…</p>
+            <p className="py-4 text-center opacity-70">Loading more…</p>
           )}
         </div>
       </ScrollArea>
@@ -251,13 +278,17 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         onClose={() => setFollowersModalOpen(false)}
         title="Followers"
         emptyMessage="No followers yet."
-        isEmpty={!followers || followers.length === 0}
+        isEmpty={!followers?.length}
       >
         <div className="space-y-4">
           {followers?.map((f) => (
             <div
               key={f.id}
-              className="flex items-center gap-3 py-2 transition-transform duration-200 hover:scale-105"
+              className="group flex cursor-pointer items-center gap-3 py-2"
+              onClick={() => {
+                setFollowersModalOpen(false);
+                router.push(`/profile/${f.id}`);
+              }}
             >
               <Avatar>
                 <AvatarImage
@@ -272,8 +303,10 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-bold">{f.name}</p>
-                <p className="text-sm text-muted-foreground">@{f.handle}</p>
+                <p className="font-bold group-hover:underline">{f.name}</p>
+                <p className="text-sm text-muted-foreground group-hover:underline">
+                  @{f.handle}
+                </p>
               </div>
             </div>
           ))}
@@ -285,13 +318,17 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         onClose={() => setFollowingModalOpen(false)}
         title="Following"
         emptyMessage="This user is not following anyone."
-        isEmpty={!following || following.length === 0}
+        isEmpty={!following?.length}
       >
         <div className="space-y-4">
           {following?.map((f) => (
             <div
               key={f.id}
-              className="flex items-center gap-3 py-2 transition-transform duration-200 hover:scale-105"
+              className="group flex cursor-pointer items-center gap-3 py-2"
+              onClick={() => {
+                setFollowingModalOpen(false);
+                router.push(`/profile/${f.id}`);
+              }}
             >
               <Avatar>
                 <AvatarImage
@@ -306,8 +343,10 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-bold">{f.name}</p>
-                <p className="text-sm text-muted-foreground">@{f.handle}</p>
+                <p className="font-bold group-hover:underline">{f.name}</p>
+                <p className="text-sm text-muted-foreground group-hover:underline">
+                  @{f.handle}
+                </p>
               </div>
             </div>
           ))}
@@ -317,37 +356,18 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   );
 }
 
-/**
- * getServerSideProps fetches the authenticated user before rendering the profile page.
- *
- * @param {GetServerSidePropsContext} context - The Next.js server-side context.
- * @returns {Promise<{ props: { user: User } } | { redirect: { destination: string; permanent: boolean } }>}
- */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData) {
-    return {
-      redirect: {
-        destination: "/",
-        permanent: false,
-      },
-    };
+    return { redirect: { destination: "/", permanent: false } };
   }
 
-  // ─── Pull profileId from the URL params ─────────────────────────────────
   const profileId = context.params?.id as string;
-
-  // ─── Fetch profile (returns null when not found) ────────────────────────
   const profile = await getProfileData(supabase, userData.user, profileId);
-  if (profile === null) {
-    return { notFound: true };
-  }
 
-  return {
-    props: {
-      user: userData.user,
-    },
-  };
+  if (!profile) return { notFound: true };
+
+  return { props: { user: userData.user } };
 }
