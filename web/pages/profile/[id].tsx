@@ -8,7 +8,14 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { ArrowLeft, Bell, BellOff, ImageOff, ImageUp } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  BellOff,
+  ImageOff,
+  ImageUp,
+  Loader2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +36,8 @@ import {
   getProfileFollowing,
 } from "@/utils/supabase/queries/profile";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
+
+import { Toaster, toast } from "sonner";
 
 interface ModalProps {
   open: boolean;
@@ -85,29 +94,32 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
 
+  // load profile
   const { data: profile } = useQuery({
     queryKey: ["profile", profileId],
     queryFn: () => getProfileData(supabase, user, profileId),
   });
 
+  // load followers/following counts
   const { data: followers } = useQuery({
     queryKey: ["profile_followers", profileId],
     queryFn: () => getProfileFollowers(supabase, profileId),
     enabled: !!profileId,
   });
-
   const { data: following } = useQuery({
     queryKey: ["profile_following", profileId],
     queryFn: () => getProfileFollowing(supabase, profileId),
     enabled: !!profileId,
   });
 
+  // determine if current user follows this profile
   useEffect(() => {
     getFollowing(supabase, user).then((list) =>
       setIsFollowing(list.some((f) => f.id === profileId)),
     );
   }, [supabase, user, profileId]);
 
+  // infinite posts
   const {
     data: posts,
     fetchNextPage,
@@ -121,6 +133,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
       lastPage.length < 25 ? undefined : pages.length * lastPage.length,
   });
 
+  // handle follow/unfollow with toast
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing((prev) => !prev);
@@ -130,13 +143,16 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     queryClient.invalidateQueries(["profile_following", profileId]);
+    toast.success(isFollowing ? "Unfollowed user" : "Followed user");
   };
 
+  // handle avatar update with toast
   useEffect(() => {
     if (selectedFile) {
       updateProfilePicture(supabase, user, selectedFile).then(() => {
         setSelectedFile(null);
         queryClient.resetQueries();
+        toast.success("Profile picture updated");
       });
     }
   }, [selectedFile, supabase, user, queryClient]);
@@ -144,218 +160,227 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const isPersonalPage = user.id === profileId;
 
   return (
-    <div className="min-h-screen w-full space-y-6 bg-background p-4">
-      <div className="mb-4 flex items-center">
-        <Button
-          variant="ghost"
-          className="transition-transform duration-200 hover:scale-105"
-          onClick={() => router.push("/")}
-        >
-          <ArrowLeft /> Back to Feed
-        </Button>
-      </div>
+    <>
+      <Toaster position="bottom-center" />
+      <div className="min-h-screen w-full space-y-6 bg-background p-4">
+        <div className="mb-4 flex items-center">
+          <Button
+            variant="ghost"
+            className="transition-transform duration-200 hover:scale-105"
+            onClick={() => router.push("/")}
+          >
+            <ArrowLeft /> Back to Feed
+          </Button>
+        </div>
 
-      {profile && (
-        <Card className="w-full rounded-xl transition-shadow duration-200 hover:shadow-lg">
-          <CardContent className="space-y-4 py-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="transition-transform duration-200 hover:scale-105">
+        {profile && (
+          <Card className="w-full rounded-xl transition-shadow duration-200 hover:shadow-lg">
+            <CardContent className="space-y-4 py-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="transition-transform duration-200 hover:scale-105">
+                    <AvatarImage
+                      src={
+                        supabase.storage
+                          .from("avatars")
+                          .getPublicUrl(profile.avatar_url ?? "").data.publicUrl
+                      }
+                    />
+                    <AvatarFallback>
+                      {profile.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-primary">{profile.name}</p>
+                    <p className="text-muted-foreground">@{profile.handle}</p>
+                  </div>
+                </div>
+
+                {!isPersonalPage && isFollowing !== undefined && (
+                  <Button
+                    variant={isFollowing ? "secondary" : "default"}
+                    className="transition-opacity duration-200 hover:opacity-80"
+                    onClick={followButtonPressed}
+                  >
+                    {isFollowing ? <BellOff /> : <Bell />}{" "}
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                )}
+
+                {isPersonalPage && (
+                  <>
+                    {profile.avatar_url ? (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="transition-opacity duration-200 hover:opacity-80"
+                        onClick={() =>
+                          updateProfilePicture(supabase, user, null).then(() =>
+                            queryClient.resetQueries(),
+                          )
+                        }
+                      >
+                        <ImageOff />
+                      </Button>
+                    ) : (
+                      <>
+                        <Input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) =>
+                            setSelectedFile(e.target.files?.[0] ?? null)
+                          }
+                        />
+                        <Button
+                          className="transition-opacity duration-200 hover:opacity-80"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <ImageUp /> Change Avatar
+                        </Button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-wrap justify-between gap-4">
+                {[
+                  {
+                    label: "Posts",
+                    count: posts?.pages.reduce((a, p) => a + p.length, 0) || 0,
+                    onClick: () =>
+                      postFeedRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                      }),
+                  },
+                  {
+                    label: "Followers",
+                    count: followers?.length || 0,
+                    onClick: () => setFollowersModalOpen(true),
+                  },
+                  {
+                    label: "Following",
+                    count: following?.length || 0,
+                    onClick: () => setFollowingModalOpen(true),
+                  },
+                ].map(({ label, count, onClick }) => (
+                  <div
+                    key={label}
+                    onClick={onClick}
+                    className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
+                  >
+                    <span className="text-2xl font-bold">{count}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <ScrollArea
+          ref={postFeedRef}
+          className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg"
+        >
+          <div className="px-2 py-4">
+            <p className="mb-2 text-lg font-bold">
+              {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
+            </p>
+            <Separator />
+            <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
+            {isFetchingNextPage && (
+              <div className="py-4 flex justify-center">
+                <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <Modal
+          open={followersModalOpen}
+          onClose={() => setFollowersModalOpen(false)}
+          title="Followers"
+          emptyMessage="No followers yet."
+          isEmpty={!followers?.length}
+        >
+          <div className="space-y-4">
+            {followers?.map((f) => (
+              <div
+                key={f.id}
+                className="group flex cursor-pointer items-center gap-3 py-2"
+                onClick={() => {
+                  setFollowersModalOpen(false);
+                  router.push(`/profile/${f.id}`);
+                }}
+              >
+                <Avatar>
                   <AvatarImage
                     src={
                       supabase.storage
                         .from("avatars")
-                        .getPublicUrl(profile.avatar_url ?? "").data.publicUrl
+                        .getPublicUrl(f.avatar_url ?? "").data.publicUrl
                     }
                   />
                   <AvatarFallback>
-                    {profile.name.slice(0, 2).toUpperCase()}
+                    {f.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold text-primary">{profile.name}</p>
-                  <p className="text-muted-foreground">@{profile.handle}</p>
+                  <p className="font-bold group-hover:underline">{f.name}</p>
+                  <p className="text-sm text-muted-foreground group-hover:underline">
+                    @{f.handle}
+                  </p>
                 </div>
               </div>
+            ))}
+          </div>
+        </Modal>
 
-              {!isPersonalPage && isFollowing !== undefined && (
-                <Button
-                  variant={isFollowing ? "secondary" : "default"}
-                  className="transition-opacity duration-200 hover:opacity-80"
-                  onClick={followButtonPressed}
-                >
-                  {isFollowing ? <BellOff /> : <Bell />}{" "}
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </Button>
-              )}
-
-              {isPersonalPage && (
-                <>
-                  {profile.avatar_url ? (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="transition-opacity duration-200 hover:opacity-80"
-                      onClick={() =>
-                        updateProfilePicture(supabase, user, null).then(() =>
-                          queryClient.resetQueries(),
-                        )
-                      }
-                    >
-                      <ImageOff />
-                    </Button>
-                  ) : (
-                    <>
-                      <Input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          setSelectedFile(e.target.files?.[0] ?? null)
-                        }
-                      />
-                      <Button
-                        className="transition-opacity duration-200 hover:opacity-80"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <ImageUp /> Change Avatar
-                      </Button>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="mt-6 flex flex-wrap justify-between gap-4">
-              {[
-                {
-                  label: "Posts",
-                  count: posts?.pages.reduce((a, p) => a + p.length, 0) || 0,
-                  onClick: () =>
-                    postFeedRef.current?.scrollIntoView({ behavior: "smooth" }),
-                },
-                {
-                  label: "Followers",
-                  count: followers?.length || 0,
-                  onClick: () => setFollowersModalOpen(true),
-                },
-                {
-                  label: "Following",
-                  count: following?.length || 0,
-                  onClick: () => setFollowingModalOpen(true),
-                },
-              ].map(({ label, count, onClick }) => (
-                <div
-                  key={label}
-                  onClick={onClick}
-                  className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
-                >
-                  <span className="text-2xl font-bold">{count}</span>
-                  <span className="text-sm text-muted-foreground">{label}</span>
+        <Modal
+          open={followingModalOpen}
+          onClose={() => setFollowingModalOpen(false)}
+          title="Following"
+          emptyMessage="This user is not following anyone."
+          isEmpty={!following?.length}
+        >
+          <div className="space-y-4">
+            {following?.map((f) => (
+              <div
+                key={f.id}
+                className="group flex cursor-pointer items-center gap-3 py-2"
+                onClick={() => {
+                  setFollowingModalOpen(false);
+                  router.push(`/profile/${f.id}`);
+                }}
+              >
+                <Avatar>
+                  <AvatarImage
+                    src={
+                      supabase.storage
+                        .from("avatars")
+                        .getPublicUrl(f.avatar_url ?? "").data.publicUrl
+                    }
+                  />
+                  <AvatarFallback>
+                    {f.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold group-hover:underline">{f.name}</p>
+                  <p className="text-sm text-muted-foreground group-hover:underline">
+                    @{f.handle}
+                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <ScrollArea
-        ref={postFeedRef}
-        className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg"
-      >
-        <div className="px-2 py-4">
-          <p className="mb-2 text-lg font-bold">
-            {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
-          </p>
-          <Separator />
-          <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
-          {isFetchingNextPage && (
-            <p className="py-4 text-center opacity-70">Loading more…</p>
-          )}
-        </div>
-      </ScrollArea>
-
-      <Modal
-        open={followersModalOpen}
-        onClose={() => setFollowersModalOpen(false)}
-        title="Followers"
-        emptyMessage="No followers yet."
-        isEmpty={!followers?.length}
-      >
-        <div className="space-y-4">
-          {followers?.map((f) => (
-            <div
-              key={f.id}
-              className="group flex cursor-pointer items-center gap-3 py-2"
-              onClick={() => {
-                setFollowersModalOpen(false);
-                router.push(`/profile/${f.id}`);
-              }}
-            >
-              <Avatar>
-                <AvatarImage
-                  src={
-                    supabase.storage
-                      .from("avatars")
-                      .getPublicUrl(f.avatar_url ?? "").data.publicUrl
-                  }
-                />
-                <AvatarFallback>
-                  {f.name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-bold group-hover:underline">{f.name}</p>
-                <p className="text-sm text-muted-foreground group-hover:underline">
-                  @{f.handle}
-                </p>
               </div>
-            </div>
-          ))}
-        </div>
-      </Modal>
-
-      <Modal
-        open={followingModalOpen}
-        onClose={() => setFollowingModalOpen(false)}
-        title="Following"
-        emptyMessage="This user is not following anyone."
-        isEmpty={!following?.length}
-      >
-        <div className="space-y-4">
-          {following?.map((f) => (
-            <div
-              key={f.id}
-              className="group flex cursor-pointer items-center gap-3 py-2"
-              onClick={() => {
-                setFollowingModalOpen(false);
-                router.push(`/profile/${f.id}`);
-              }}
-            >
-              <Avatar>
-                <AvatarImage
-                  src={
-                    supabase.storage
-                      .from("avatars")
-                      .getPublicUrl(f.avatar_url ?? "").data.publicUrl
-                  }
-                />
-                <AvatarFallback>
-                  {f.name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-bold group-hover:underline">{f.name}</p>
-                <p className="text-sm text-muted-foreground group-hover:underline">
-                  @{f.handle}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Modal>
-    </div>
+            ))}
+          </div>
+        </Modal>
+      </div>
+    </>
   );
 }
 

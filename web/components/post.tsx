@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type PostCardProps = {
   user: User;
@@ -39,11 +40,12 @@ export default function PostCard({ user, post }: PostCardProps) {
       queryKey: ["post", post.id],
       refetchType: "all",
     });
+    toast.success(isLiked ? "Unliked post" : "Liked post");
   };
 
   return (
     <div
-      className="flex flex-row w-full gap-3 p-6 cursor-pointer"
+      className="flex w-full gap-3 p-6 cursor-pointer"
       onClick={() => router.push(`/post/${post.id}`)}
     >
       <Avatar className="flex-shrink-0">
@@ -58,22 +60,24 @@ export default function PostCard({ user, post }: PostCardProps) {
           {post.author.name.slice(0, 2).toUpperCase()}
         </AvatarFallback>
       </Avatar>
-      <div className="flex flex-col gap-3 w-full">
-        <div className="flex flex-row justify-between items-center">
+
+      <div className="flex flex-col gap-3 w-full min-w-0">
+        {/* header: author + like, wraps when too wide */}
+        <div className="flex flex-wrap justify-between items-center gap-2 w-full">
           <Link href={`/profile/${post.author.id}`} legacyBehavior>
             <a
-              className="flex flex-row items-center"
+              className="flex flex-wrap items-center gap-2 break-words"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-primary font-bold hover:underline">
+              <p className="text-primary font-bold hover:underline break-all">
                 {post.author.name}
               </p>
-              <p className="ml-3 text-muted-foreground hover:underline">
+              <p className="text-muted-foreground hover:underline break-all">
                 @{post.author.handle}
               </p>
             </a>
           </Link>
-          <div className="flex flex-row items-center">
+          <div className="flex-shrink-0">
             <Button variant="ghost" onClick={handleLike}>
               <p
                 className={`text-sm ${
@@ -86,10 +90,12 @@ export default function PostCard({ user, post }: PostCardProps) {
             </Button>
           </div>
         </div>
-        <div className="flex flex-col gap-4 my-2 min-w-full">
+
+        {/* content */}
+        <div className="flex flex-col gap-4 my-2 w-full min-w-0">
           {post.attachment_url && (
             <Image
-              className="rounded-xl"
+              className="rounded-xl object-cover w-full max-h-[600px]"
               src={
                 supabase.storage
                   .from("images")
@@ -100,7 +106,9 @@ export default function PostCard({ user, post }: PostCardProps) {
               height={600}
             />
           )}
-          <p>{post.content}</p>
+          <p className="whitespace-pre-wrap break-words break-all">
+            {post.content}
+          </p>
         </div>
       </div>
     </div>

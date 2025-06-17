@@ -33,9 +33,11 @@ import {
   RotateCcw,
   Send,
   X,
+  Loader2,
 } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
 import { z } from "zod";
+import { Toaster, toast } from "sonner";
 
 enum HomePageTab {
   FEED = "Feed",
@@ -56,8 +58,9 @@ export default function HomePage({ user, profile }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FEED);
   const [expandPostDraft, setExpandPostDraft] = useState<boolean>(true);
   const [postDraftText, setPostDraftText] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const fetchDataFn =
     activeTab === HomePageTab.FEED
@@ -71,6 +74,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading: isInitialLoading,
   } = useInfiniteQuery({
     queryKey: ["posts", activeTab],
     queryFn: async ({ pageParam = 0 }) =>
@@ -85,179 +89,205 @@ export default function HomePage({ user, profile }: HomePageProps) {
   const refresh = () => queryClient.resetQueries();
 
   const publishPost = async () => {
-    await createPost(supabase, user, postDraftText, selectedFile);
-    setPostDraftText("");
-    setSelectedFile(null);
-    refresh();
+    if (!postDraftText.trim()) return;
+    setIsPosting(true);
+    try {
+      await createPost(supabase, user, postDraftText, selectedFile);
+      setPostDraftText("");
+      setSelectedFile(null);
+      refresh();
+      toast.success("Post published!");
+    } catch {
+      toast.error("Failed to publish post.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
-    <div className="scroll-smooth flex flex-col items-center w-full min-h-screen px-4">
-      <div className="w-full mb-8">
-        <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-102 mt-4">
-          <CardHeader className="py-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="transition-colors ease-in-out duration-300 hover:text-primary">
-                Write a Post
-              </CardTitle>
-              {expandPostDraft ? (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="transition-transform ease-in-out duration-300 hover:scale-102"
-                  onClick={() => setExpandPostDraft(false)}
-                >
-                  <ChevronsDown />
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="transition-transform ease-in-out duration-300 hover:scale-102"
-                  onClick={() => setExpandPostDraft(true)}
-                >
-                  <ChevronsLeft />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          {expandPostDraft && (
-            <>
-              <CardContent className="space-y-2 pb-3">
-                <div className="flex flex-col sm:flex-row gap-3 w-full">
-                  <Avatar className="mt-1 flex-shrink-0 rounded-full transition-transform ease-in-out duration-300 hover:scale-102">
-                    <AvatarImage
-                      src={
-                        supabase.storage
-                          .from("avatars")
-                          .getPublicUrl(profile.avatar_url ?? "").data.publicUrl
+    <>
+      <Toaster position="bottom-center" />
+      <div className="scroll-smooth flex flex-col items-center w-full min-h-screen px-4">
+        <div className="w-full mb-8">
+          {/* Post draft card */}
+          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-[1.02] mt-4">
+            <CardHeader className="py-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="transition-colors ease-in-out duration-300 hover:text-primary">
+                  Write a Post
+                </CardTitle>
+                {expandPostDraft ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                    onClick={() => setExpandPostDraft(false)}
+                  >
+                    <ChevronsDown />
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                    onClick={() => setExpandPostDraft(true)}
+                  >
+                    <ChevronsLeft />
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            {expandPostDraft && (
+              <>
+                <CardContent className="space-y-2 pb-3">
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <Avatar className="mt-1 flex-shrink-0 rounded-full transition-transform ease-in-out duration-300 hover:scale-[1.02]">
+                      <AvatarImage
+                        src={
+                          supabase.storage
+                            .from("avatars")
+                            .getPublicUrl(profile.avatar_url ?? "").data
+                            .publicUrl
+                        }
+                      />
+                      <AvatarFallback>
+                        {profile.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Textarea
+                      value={postDraftText}
+                      onChange={(e) => setPostDraftText(e.target.value)}
+                      className="flex-1 h-28 rounded-2xl transition-shadow ease-in-out duration-300 focus:shadow-outline"
+                      placeholder="What's on your mind? Share your thoughts, ideas, or experiences with the world!"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="pb-3">
+                  <div className="flex flex-wrap gap-3 justify-end">
+                    <Input
+                      className="hidden"
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={(e) =>
+                        setSelectedFile(e.target.files?.[0] ?? null)
                       }
                     />
-                    <AvatarFallback>
-                      {profile.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Textarea
-                    value={postDraftText}
-                    onChange={(e) => setPostDraftText(e.target.value)}
-                    className="flex-1 h-28 rounded-2xl transition-shadow ease-in-out duration-300 focus:shadow-outline"
-                    placeholder="What's on your mind? Share your thoughts, ideas, or experiences with the world!"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="pb-3">
-                <div className="flex flex-wrap gap-3 justify-end">
-                  <Input
-                    className="hidden"
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={(e) =>
-                      setSelectedFile(
-                        e.target.files && e.target.files[0]
-                          ? e.target.files[0]
-                          : null,
-                      )
-                    }
-                  />
-                  {selectedFile ? (
+                    {selectedFile ? (
+                      <Button
+                        variant="secondary"
+                        className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                        onClick={() => setSelectedFile(null)}
+                      >
+                        <ImagePlus />
+                        <p className="text-sm max-w-xs truncate">
+                          {selectedFile.name}
+                        </p>
+                        <X />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <ImagePlus />
+                      </Button>
+                    )}
                     <Button
-                      variant="secondary"
-                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
-                      onClick={() => setSelectedFile(null)}
+                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                      onClick={publishPost}
+                      disabled={!postDraftText.trim() || isPosting}
                     >
-                      <ImagePlus />
-                      <p className="text-sm max-w-xs truncate">
-                        {selectedFile.name}
-                      </p>
-                      <X />
+                      {isPosting ? (
+                        <Loader2 className="animate-spin h-5 w-5" />
+                      ) : (
+                        <>
+                          <Send /> Post
+                        </>
+                      )}
                     </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <ImagePlus />
-                    </Button>
-                  )}
-                  <Button
-                    className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-102"
-                    onClick={publishPost}
-                    disabled={postDraftText.length === 0}
-                  >
-                    <Send /> Post
-                  </Button>
-                </div>
-              </CardFooter>
-            </>
-          )}
-        </Card>
+                  </div>
+                </CardFooter>
+              </>
+            )}
+          </Card>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full mt-8"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <TabsList className="grid grid-cols-3 flex-1 rounded-3xl">
-              <TabsTrigger
-                value={HomePageTab.FEED}
-                className="transition-colors ease-in-out duration-300 hover:text-primary"
+          {/* Tabs */}
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full mt-8"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <TabsList className="grid grid-cols-3 flex-1 rounded-lg">
+                <TabsTrigger
+                  value={HomePageTab.FEED}
+                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                >
+                  Feed
+                </TabsTrigger>
+                <TabsTrigger
+                  value={HomePageTab.FOLLOWING}
+                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                >
+                  Following
+                </TabsTrigger>
+                <TabsTrigger
+                  value={HomePageTab.LIKED}
+                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                >
+                  Liked
+                </TabsTrigger>
+              </TabsList>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="rounded-full transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                onClick={refresh}
               >
-                Feed
-              </TabsTrigger>
-              <TabsTrigger
-                value={HomePageTab.FOLLOWING}
-                className="transition-colors ease-in-out duration-300 hover:text-primary"
-              >
-                Following
-              </TabsTrigger>
-              <TabsTrigger
-                value={HomePageTab.LIKED}
-                className="transition-colors ease-in-out duration-300 hover:text-primary"
-              >
-                Liked
-              </TabsTrigger>
-            </TabsList>
-            <Button
-              variant="secondary"
-              size="icon"
-              className="rounded-full transition-transform ease-in-out duration-300 hover:scale-102"
-              onClick={refresh}
-            >
-              <RotateCcw />
-            </Button>
+                <RotateCcw />
+              </Button>
+            </div>
+          </Tabs>
+
+          {/* Posts list */}
+          <div className="mt-4 space-y-6 w-full">
+            {isInitialLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+              </div>
+            ) : (
+              posts?.pages.map((page, pi) =>
+                page.map((post, idx) => (
+                  <Fragment key={post.id}>
+                    <div className="w-full rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-[1.02]">
+                      <PostCard user={user} post={post} />
+                    </div>
+                    <Separator className="transition-colors ease-in-out duration-300 hover:bg-muted-foreground" />
+                    {pi === posts.pages.length - 1 &&
+                      idx === page.length - 1 &&
+                      hasNextPage && (
+                        <InView
+                          onChange={(inView) => inView && fetchNextPage()}
+                        />
+                      )}
+                  </Fragment>
+                )),
+              )
+            )}
+
+            {/* Spinner for infinite-fetch */}
+            {isFetchingNextPage && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
           </div>
-        </Tabs>
-
-        {/* Inline post list for natural scrolling */}
-        <div className="mt-4 space-y-6">
-          {posts?.pages.map((page, pi) =>
-            page.map((post, idx) => (
-              <Fragment key={post.id}>
-                <div className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-102">
-                  <PostCard user={user} post={post} />
-                </div>
-                <Separator className="transition-colors ease-in-out duration-300 hover:bg-muted-foreground" />
-                {/* Sentinel for infinite scroll */}
-                {pi === posts.pages.length - 1 &&
-                  idx === page.length - 1 &&
-                  hasNextPage && (
-                    <InView onChange={(inView) => inView && fetchNextPage()} />
-                  )}
-              </Fragment>
-            )),
-          )}
-          {isFetchingNextPage && (
-            <p className="text-center transition-opacity ease-in-out duration-300 animate-pulse">
-              Loading...
-            </p>
-          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
