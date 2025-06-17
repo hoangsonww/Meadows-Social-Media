@@ -195,6 +195,36 @@ You can find these in your Supabase project settings.
 
 ---
 
+## Supabase
+
+To set up Supabase:
+
+1. Create a new project on [Supabase](https://supabase.com/).
+2. Set up authentication providers (email/password).
+3. Create a `posts` table with the following schema:
+   - `id`: UUID (Primary Key)
+   - `user_id`: UUID (Foreign Key to users)
+   - `content`: Text
+   - `image_url`: Text (optional)
+   - `created_at`: Timestamp
+4. Create a `users` table with the following schema:
+   - `id`: UUID (Primary Key)
+   - `username`: Text (Unique)
+   - `email`: Text (Unique)
+   - `avatar_url`: Text (optional)
+   - `created_at`: Timestamp
+5. Set up Row Level Security (RLS) policies for the `posts` and `users` tables to allow authenticated users to read/write their own data.
+6. Enable Supabase Storage for image uploads.
+7. Update the `.env.local` file with your Supabase URL and anon key.
+
+FYI, you can find the schema definitions under the [database directory](./database).
+
+<p align="center">
+  <img src="img/schema.png" alt="Supabase" width="100%"/>
+</p>
+
+---
+
 ## Contributing
 
 1. Fork this repo
