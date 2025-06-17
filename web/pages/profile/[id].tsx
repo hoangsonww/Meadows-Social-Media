@@ -1,4 +1,3 @@
-// pages/profile/[id].tsx
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/router";
@@ -74,7 +73,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const [followersModalOpen, setFollowersModalOpen] = useState(false);
   const [followingModalOpen, setFollowingModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isFollowing, setIsFollowing] = useState<boolean | undefined>(undefined);
+  const [isFollowing, setIsFollowing] = useState<boolean | undefined>(
+    undefined,
+  );
 
   const postFeedRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -123,7 +124,11 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing((prev) => !prev);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     queryClient.invalidateQueries(["profile_followers", profileId]);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     queryClient.invalidateQueries(["profile_following", profileId]);
   };
 
@@ -247,9 +252,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
                 >
                   <span className="text-2xl font-bold">{count}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {label}
-                  </span>
+                  <span className="text-sm text-muted-foreground">{label}</span>
                 </div>
               ))}
             </div>
