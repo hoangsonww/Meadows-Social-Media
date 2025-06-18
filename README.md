@@ -8,13 +8,15 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white" alt="React Query" />
-  <img src="https://img.shields.io/badge/Heroicons-0EA5E9?style=for-the-badge&logo=heroicons&logoColor=white" alt="Heroicons" />
   <img src="https://img.shields.io/badge/JavaScript-323330?style=for-the-badge&logo=javascript&logoColor=F7DF1E" alt="JavaScript" />
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white" alt="CSS3" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css&logoColor=white" alt="CSS3" />
   <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
   <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/lucide-000000?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide React" />
+  <img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white" alt="React Router" />
+  <img src="https://img.shields.io/badge/Jest-333?style=for-the-badge&logo=jest&logoColor=C21325" alt="Jest" />
   <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" alt="ESLint" />
   <img src="https://img.shields.io/badge/Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/Zod-2B6CB0?style=for-the-badge&logo=zod&logoColor=white" alt="Zod" />
@@ -35,8 +37,10 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 6. [Key Components](#key-components)
 7. [Scripts](#scripts)
 8. [Supabase Setup](#supabase)
-9. [Contributing](#contributing)
-10. [License](#license)
+9. [Testing & Formatting](#testing--formatting)
+10. [Contributing](#contributing)
+11. [License](#license)
+12. [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -231,6 +235,30 @@ FYI, you can find the schema definitions under the [database directory](./databa
 
 ---
 
+## Testing & Formatting
+
+This project uses Jest for testing and Prettier for code formatting.
+
+To run tests:
+
+```bash
+npm run test
+# or
+yarn test
+```
+
+To format code:
+
+```bash
+npm run format
+# or
+yarn format
+```
+
+Running `npm run format` will automatically format your code according to the Prettier configuration. It is recommended to run this command **every time** before committing changes to ensure consistent code style.
+
+---
+
 ## Contributing
 
 1. Fork this repo
@@ -263,7 +291,7 @@ If you have any questions or feedback, feel free to reach out to me via either:
 
 - **Email**: [hoangson091104@gmail.com](mailto:hoangson091104@gmail.com)
 - **GitHub**: [hoangsonww](https://github.com/hoangsonww)
-- **LinkedIn**: [Hoang Son](https://www.linkedin.com/in/hoangsonw/)
+- **LinkedIn**: [Son Nguyen](https://www.linkedin.com/in/hoangsonw/)
 
 I welcome contributions, suggestions, and any issues you may encounter while using this project. Your feedback is invaluable in making Meadows better for everyone!
 
