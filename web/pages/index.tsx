@@ -110,7 +110,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
       <div className="scroll-smooth flex flex-col items-center w-full min-h-screen px-4">
         <div className="w-full mb-8">
           {/* Post draft card */}
-          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-[1.02] mt-4">
+          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md mt-4">
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="transition-colors ease-in-out duration-300 hover:text-primary">
@@ -262,7 +262,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
               posts?.pages.map((page, pi) =>
                 page.map((post, idx) => (
                   <Fragment key={post.id}>
-                    <div className="w-full rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md hover:scale-[1.02]">
+                    <div className="w-full rounded-3xl transition-all ease-in-out duration-300 hover:shadow-lg">
                       <PostCard user={user} post={post} />
                     </div>
                     <Separator className="transition-colors ease-in-out duration-300 hover:bg-muted-foreground" />
