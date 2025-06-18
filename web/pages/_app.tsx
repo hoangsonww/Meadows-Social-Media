@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
+import BackToTopButton from "@/components/BackToTopButton";
 
 const queryClient = new QueryClient();
 
@@ -118,10 +119,14 @@ export default function App({ Component, pageProps }: AppProps) {
         {/* dynamically update theme-color as soon as theme toggles */}
         <MetaUpdater />
 
-        <div className="flex h-screen flex-col overflow-y-auto overflow-x-hidden">
+        <div className="flex min-h-screen flex-col overflow-x-hidden">
           <Header />
-          <Component {...pageProps} />
+          {/* only the page content scrolls */}
+          <main className="flex-1 overflow-y-auto">
+            <Component {...pageProps} />
+          </main>
         </div>
+        <BackToTopButton />
       </ThemeProvider>
     </QueryClientProvider>
   );

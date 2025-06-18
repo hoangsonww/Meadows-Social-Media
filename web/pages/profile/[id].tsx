@@ -15,6 +15,7 @@ import {
   ImageOff,
   ImageUp,
   Loader2,
+  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,13 @@ function Modal({
         onClick={onClose}
       />
       <div className="relative z-50 w-full max-w-md max-h-[95vh] overflow-y-auto rounded-xl bg-background shadow-xl p-4">
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-4 right-4 rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+        >
+          <X className="h-5 w-5 text-muted-foreground" />
+        </button>
         <h2 className="mb-4 text-lg font-semibold">{title}</h2>
         {isEmpty ? (
           <p className="text-center text-muted-foreground">{emptyMessage}</p>
