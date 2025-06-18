@@ -21,7 +21,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
-**Live Web App**: [https://meadows.vercel.app/](https://meadows.vercel.app/)
+**Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
 
 ---
 
@@ -34,8 +34,9 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 5. [Project Structure](#project-structure)
 6. [Key Components](#key-components)
 7. [Scripts](#scripts)
-8. [Contributing](#contributing)
-9. [License](#license)
+8. [Supabase Setup](#supabase)
+9. [Contributing](#contributing)
+10. [License](#license)
 
 ---
 
@@ -195,7 +196,9 @@ You can find these in your Supabase project settings.
 
 ---
 
-## Supabase
+## Supabase Setup
+
+This project uses Supabase for authentication and database management. Supabase provides a powerful backend-as-a-service solution that integrates seamlessly with Next.js applications.
 
 To set up Supabase:
 
@@ -213,11 +216,14 @@ To set up Supabase:
    - `email`: Text (Unique)
    - `avatar_url`: Text (optional)
    - `created_at`: Timestamp
-5. Set up Row Level Security (RLS) policies for the `posts` and `users` tables to allow authenticated users to read/write their own data.
-6. Enable Supabase Storage for image uploads.
-7. Update the `.env.local` file with your Supabase URL and anon key.
+5. Do the same for the other tables like `followers`, `likes`, etc., as per the schema definitions in the [database directory](./database).
+6. Set up Row Level Security (RLS) policies for the `posts` and `users` tables to allow authenticated users to read/write their own data.
+7. Enable Supabase Storage for image uploads.
+8. Enable Supabase Auth for user management.
+9. Update the `.env.local` file with your Supabase URL and anon key.
+10. Manage your database and tables using the Supabase dashboard as you develop your application.
 
-FYI, you can find the schema definitions under the [database directory](./database).
+FYI, you can find the schema definitions under the [database directory](./database). Below is a visual representation of the database schema:
 
 <p align="center">
   <img src="img/schema.png" alt="Supabase" width="100%"/>
@@ -248,3 +254,19 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 Big thanks to Prof. Ajay Gandecha at UNC-Chapel Hill for the inspiration and basic structure of this project. The original project was a simple social media app, and this version has been significantly expanded with additional features and improvements.
 
 Additionally, thanks to the open-source community for the libraries and tools that made this project possible, including Next.js, Supabase, React Query, Tailwind CSS, and many others.
+
+---
+
+## Contact
+
+If you have any questions or feedback, feel free to reach out to me via either:
+
+- **Email**: [hoangson091104@gmail.com](mailto:hoangson091104@gmail.com)
+- **GitHub**: [hoangsonww](https://github.com/hoangsonww)
+- **LinkedIn**: [Hoang Son](https://www.linkedin.com/in/hoangsonw/)
+
+I welcome contributions, suggestions, and any issues you may encounter while using this project. Your feedback is invaluable in making Meadows better for everyone!
+
+---
+
+Thank you for checking out Meadows! I hope you find it useful and enjoyable to use. If you have any questions or suggestions, feel free to reach out or open an issue on GitHub. Happy coding! 🍃
