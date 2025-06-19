@@ -75,8 +75,6 @@ export default function App({ Component, pageProps }: AppProps) {
           <link rel="manifest" href="/site.webmanifest" />
           <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#4F46E5" />
           <meta name="msapplication-TileColor" content="#4F46E5" />
-          {/* initial placeholder; updated immediately on theme change */}
-          <meta name="theme-color" content="#000000" />
 
           {/* Open Graph / Facebook */}
           <meta property="og:type" content="website" />
