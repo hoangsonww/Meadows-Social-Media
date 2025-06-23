@@ -31,7 +31,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-white dark:bg-black shadow-md px-4 py-2 flex items-center justify-between">
       {/* Logo + Home link */}
       <Link
-        href="/"
+        href="/home"
         className="flex items-center gap-3 cursor-pointer transition-opacity hover:opacity-80"
       >
         <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />

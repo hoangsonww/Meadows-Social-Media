@@ -49,7 +49,7 @@ export default function LoginPage() {
     if (data.user) {
       queryClient.resetQueries({ queryKey: ["user_profile"] });
       toast.success("Logged in successfully!");
-      router.push("/");
+      router.push("/home");
     } else {
       toast.error("Login failed. Please try again.");
     }

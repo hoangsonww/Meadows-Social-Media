@@ -105,7 +105,7 @@ export default function PostPage({ user }: PostPageProps) {
           <Button
             variant="ghost"
             className="transition-transform duration-200 hover:scale-105"
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/home")}
           >
             <ArrowLeft /> Back to Feed
           </Button>

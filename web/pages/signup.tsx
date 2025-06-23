@@ -66,7 +66,7 @@ export default function SignUpPage() {
     if (data.user) {
       queryClient.resetQueries({ queryKey: ["user_profile"] });
       toast.success("Sign-up successful!");
-      router.push("/");
+      router.push("/home");
     } else {
       toast.error("Sign-up failed. Please try again.");
     }
