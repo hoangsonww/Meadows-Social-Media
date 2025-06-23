@@ -7,6 +7,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Shadcn%20UI-111?style=for-the-badge&logo=shadcnui&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/React_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white" alt="React Query" />
   <img src="https://img.shields.io/badge/JavaScript-323330?style=for-the-badge&logo=javascript&logoColor=F7DF1E" alt="JavaScript" />
   <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
@@ -17,6 +18,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/lucide-000000?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide React" />
   <img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white" alt="React Router" />
   <img src="https://img.shields.io/badge/Jest-333?style=for-the-badge&logo=jest&logoColor=C21325" alt="Jest" />
+  <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" alt="ESLint" />
   <img src="https://img.shields.io/badge/Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=black" alt="Prettier" />
   <img src="https://img.shields.io/badge/Zod-2B6CB0?style=for-the-badge&logo=zod&logoColor=white" alt="Zod" />
@@ -50,9 +52,12 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 ## User Interface
 
 <p align="center">
+  <img src="img/landing.png" alt="Landing Page" width="100%" />
   <img src="img/home.png" alt="Home Feed" width="100%" />
   <img src="img/post.png" alt="Post Page" width="100%" />
   <img src="img/profile.png" alt="Profile Page" width="100%" />
+  <img src="img/signup.png" alt="Sign Up Page" width="100%" />
+  <img src="img/login.png" alt="Login Page" width="100%" />
 </p>
 
 ---

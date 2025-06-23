@@ -175,7 +175,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
           <Button
             variant="ghost"
             className="transition-transform duration-200 hover:scale-105"
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/home")}
           >
             <ArrowLeft /> Back to Feed
           </Button>
@@ -397,7 +397,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData) {
-    return { redirect: { destination: "/", permanent: false } };
+    return {
+      redirect: { destination: "/login", permanent: false },
+    };
   }
 
   const profileId = context.params?.id as string;

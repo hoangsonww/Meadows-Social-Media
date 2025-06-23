@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useRouter } from "next/router";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { useTheme } from "next-themes";
 import Header from "@/components/header";
@@ -29,6 +30,9 @@ function MetaUpdater() {
 }
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const isLanding = router.pathname === "/";
+
   return (
     <QueryClientProvider client={queryClient}>
       <Analytics />
@@ -118,8 +122,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <MetaUpdater />
 
         <div className="flex min-h-screen flex-col overflow-x-hidden">
-          <Header />
-          {/* only the page content scrolls */}
+          {/* only show on non-landing pages */}
+          {!isLanding && <Header />}
+
           <main className="flex-1 overflow-y-auto">
             <Component {...pageProps} />
           </main>
