@@ -3,6 +3,12 @@
 A full-featured social feed application built with Next.js, Supabase, and React Query. Meadows lets users create posts (with optional images), follow other users, like posts, and manage their profiles. It includes infinite scrolling, light/dark mode, and a responsive, mobile-friendly design.
 
 <p align="center">
+  <a href="https://meadows.vercel.app/">
+    <img src="img/logo.png" alt="Meadows Logo" width="35%" style="border-radius: 8px;" />
+  </a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
@@ -25,9 +31,8 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
-> [!IMPORTANT]
-> **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
-> 
+> [!IMPORTANT] > **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
+>
 > Please give it a try and start sharing your thoughts stylishly!
 
 ---
