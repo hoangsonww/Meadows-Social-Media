@@ -4,7 +4,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 
 <p align="center">
   <a href="https://meadows.vercel.app/">
-    <img src="img/logo.png" alt="Meadows Logo" width="35%" style="border-radius: 8px;" />
+    <img src="img/logo.png" alt="Meadows Logo" width="30%" style="border-radius: 8px;" />
   </a>
 </p>
 
