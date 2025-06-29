@@ -4,7 +4,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 
 <p align="center">
   <a href="https://meadows.vercel.app/">
-    <img src="img/logo.png" alt="Meadows Logo" width="35%" style="border-radius: 8px;" />
+    <img src="img/logo.png" alt="Meadows Logo" width="30%" style="border-radius: 8px;" />
   </a>
 </p>
 
@@ -31,8 +31,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
-> [!IMPORTANT]
-> **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
+> [!IMPORTANT] > **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
 >
 > Please give it a try and start sharing your thoughts stylishly!
 
