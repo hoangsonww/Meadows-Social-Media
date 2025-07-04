@@ -2,7 +2,7 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# accept your two Supabase vars at build time
+# accept the two Supabase vars at build time
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -21,7 +21,16 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# copy over just what we need
+# Add descriptive labels:
+LABEL \
+  org.opencontainers.image.title="Meadows Social App" \
+  org.opencontainers.image.description="A social media app built with Next.js, Supabase, and Radix UI." \
+  org.opencontainers.image.url="https://github.com/hoangsonww/Meadows-Social-Media" \
+  org.opencontainers.image.source="https://github.com/hoangsonww/meadows-social-Media" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.version="0.1.0" \
+  org.opencontainers.image.authors="Son Nguyen <hoangson091104@gmail.com.com>"
+
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
