@@ -1,30 +1,31 @@
-# 1) Install dependencies and build
+# 1) Build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# copy package manifest & lockfile
-COPY package.json package-lock.json ./
+# accept your two Supabase vars at build time
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-# install deps
+# inject them so next build & SSR code sees them
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+
+COPY package.json package-lock.json ./
 RUN npm ci
 
-# copy rest of source
 COPY . .
-
-# build the Next.js app
 RUN npm run build
 
-# 2) Production image
+# 2) Production runtime
 FROM node:18-alpine AS runner
 WORKDIR /app
+ENV NODE_ENV=production
 
-# only copy what's needed for runtime
+# copy over just what we need
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
-# expose port and run
-ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["npm", "start"]
