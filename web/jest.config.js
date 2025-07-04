@@ -1,15 +1,10 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
-  moduleNameMapper: {
-    // Handle CSS imports (if any)
-    "\\.(css|less|sass|scss)$": "identity-obj-proxy",
-    // Handle module aliasing (Next.js)
-    "^@/components/(.*)$": "<rootDir>/components/$1",
-    "^@/pages/(.*)$": "<rootDir>/pages/$1",
-    "^@/utils/(.*)$": "<rootDir>/utils/$1",
+  testEnvironment: "node",
+  roots: ["<rootDir>/tests"],
+  transform: {
+    "^.+\\.tsx?$": "ts-jest",
   },
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testPathIgnorePatterns: ["/node_modules/", "/.next/"],
+  moduleFileExtensions: ["ts", "js", "json", "node"],
 };
