@@ -23,7 +23,6 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/lucide-000000?style=for-the-badge&logo=lucide&logoColor=white" alt="Lucide React" />
   <img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white" alt="React Router" />
-  <img src="https://img.shields.io/badge/Jest-333?style=for-the-badge&logo=jest&logoColor=C21325" alt="Jest" />
   <img src="https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white" alt="Framer Motion" />
   <img src="https://img.shields.io/badge/ESLint-4B32C3?style=for-the-badge&logo=eslint&logoColor=white" alt="ESLint" />
   <img src="https://img.shields.io/badge/Prettier-F7B93E?style=for-the-badge&logo=prettier&logoColor=black" alt="Prettier" />
@@ -53,9 +52,11 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 7. [Scripts](#scripts)
 8. [Supabase Setup](#supabase)
 9. [Testing & Formatting](#testing--formatting)
-10. [Contributing](#contributing)
-11. [License](#license)
-12. [Acknowledgments](#acknowledgments)
+10. [GitHub Actions](#github-actions)
+11. [Contributing](#contributing)
+12. [License](#license)
+13. [Acknowledgments](#acknowledgments)
+14. [Contact](#contact)
 
 ---
 
@@ -260,20 +261,49 @@ This project uses Jest for testing and Prettier for code formatting.
 To run tests:
 
 ```bash
+cd web
+
 npm run test
 # or
 yarn test
+
+# To run tests in watch mode
+npm run test:watch
+# or
+yarn test:watch
+
+# To run tests with coverage report
+npm run test:coverage
+# or
+yarn test:coverage
 ```
 
 To format code:
 
 ```bash
+cd web
+
 npm run format
 # or
 yarn format
 ```
 
 Running `npm run format` will automatically format your code according to the Prettier configuration. It is recommended to run this command **every time** before committing changes to ensure consistent code style.
+
+---
+
+## GitHub Actions
+
+This project uses GitHub Actions for continuous integration. The workflow is defined in `.github/workflows/ci.yml`. It runs the following checks on every push and pull request:
+
+- Linting with ESLint
+- Formatting with Prettier
+- Running tests with Jest
+- Building the Next.js application
+- Checking for type errors with TypeScript
+- Deploying to Vercel if all checks pass
+
+The workflow ensures that all code changes meet the project's quality standards before being merged into the main branch.
 
 ---
 
@@ -292,6 +322,8 @@ Please ensure all new code is covered by tests and adheres to the project’s co
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+Please note that while this project is open-source, it is intended for educational purposes and personal use. Please do not use it for commercial purposes without prior permission, and always give credit to the original authors regardless of usage.
 
 ---
 
