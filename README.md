@@ -84,7 +84,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 - **Light/Dark Mode** toggle
 - **Share & Copy Link** buttons using Web Share API
 - **Responsive Layout** spanning full width
-- **Client-side Bookmarking** (via `localStorage`)
+- **Bookmarked Posts** synced via Supabase for cross-device access
 - **Bookmark Library** page to revisit and manage saved posts
 - **Server-Side Rendering** for initial data fetch
 - **TypeScript** for type safety

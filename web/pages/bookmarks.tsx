@@ -4,9 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
-import { getPostsByIds } from "@/utils/supabase/queries/post";
+import {
+  clearBookmarks,
+  getBookmarkedPosts,
+  removeBookmark,
+  saveBookmarksBulk,
+} from "@/utils/supabase/queries/bookmark";
 import { User } from "@supabase/supabase-js";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookmarkX, Loader2 } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
 import { Toaster, toast } from "sonner";
@@ -17,77 +22,99 @@ type BookmarksPageProps = {
 
 export default function BookmarksPage({ user }: BookmarksPageProps) {
   const supabase = createSupabaseComponentClient();
-  const [bookmarkIds, setBookmarkIds] = useState<string[]>([]);
+  const queryClient = useQueryClient();
+  const [hasSyncedLocalBookmarks, setHasSyncedLocalBookmarks] =
+    useState(false);
+  const [isModifyingBookmarks, setIsModifyingBookmarks] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (hasSyncedLocalBookmarks || typeof window === "undefined") {
+      return;
+    }
 
-    const syncFromStorage = () => {
-      try {
-        const raw = window.localStorage.getItem("bookmarkedPosts");
-        const parsed = raw ? JSON.parse(raw) : [];
+    const raw = window.localStorage.getItem("bookmarkedPosts");
 
-        if (Array.isArray(parsed)) {
-          const sanitized = Array.from(
-            new Set(
-              parsed.filter((id): id is string => typeof id === "string"),
-            ),
-          );
+    if (!raw) {
+      setHasSyncedLocalBookmarks(true);
+      return;
+    }
 
-          setBookmarkIds(sanitized);
-          window.localStorage.setItem(
-            "bookmarkedPosts",
-            JSON.stringify(sanitized),
-          );
-        } else {
-          setBookmarkIds([]);
+    try {
+      const parsed = JSON.parse(raw);
+
+      if (!Array.isArray(parsed)) {
+        window.localStorage.removeItem("bookmarkedPosts");
+        setHasSyncedLocalBookmarks(true);
+        return;
+      }
+
+      const sanitized = Array.from(
+        new Set(
+          parsed.filter((id: unknown): id is string => typeof id === "string"),
+        ),
+      );
+
+      if (sanitized.length === 0) {
+        window.localStorage.removeItem("bookmarkedPosts");
+        setHasSyncedLocalBookmarks(true);
+        return;
+      }
+
+      (async () => {
+        try {
+          await saveBookmarksBulk(supabase, user, sanitized);
           window.localStorage.removeItem("bookmarkedPosts");
+          queryClient.invalidateQueries({ queryKey: ["bookmarkedPosts"] });
+        } catch (error) {
+          console.error("Failed to migrate local bookmarks", error);
+        } finally {
+          setHasSyncedLocalBookmarks(true);
         }
-      } catch {
-        setBookmarkIds([]);
-      }
-    };
+      })();
+    } catch {
+      window.localStorage.removeItem("bookmarkedPosts");
+      setHasSyncedLocalBookmarks(true);
+    }
+  }, [hasSyncedLocalBookmarks, queryClient, supabase, user]);
 
-    syncFromStorage();
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === "bookmarkedPosts") {
-        syncFromStorage();
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ["bookmarkedPosts", bookmarkIds],
-    queryFn: async () => getPostsByIds(supabase, user, bookmarkIds),
-    enabled: bookmarkIds.length > 0,
+  const {
+    data: posts = [],
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["bookmarkedPosts"],
+    queryFn: async () => getBookmarkedPosts(supabase, user),
   });
 
-  const posts = bookmarkIds.length === 0 ? [] : data ?? [];
-  const isLoadingBookmarks =
-    bookmarkIds.length > 0 && (isLoading || isFetching);
+  const isLoadingBookmarks = isLoading || isFetching;
+  const isBusy = isLoadingBookmarks || isModifyingBookmarks;
 
-  const handleRemoveBookmark = (postId: string) => {
-    if (typeof window === "undefined") return;
-
-    setBookmarkIds((prev) => {
-      const updated = prev.filter((id) => id !== postId);
-      window.localStorage.setItem("bookmarkedPosts", JSON.stringify(updated));
-      return updated;
-    });
-
-    toast.success("Removed bookmark");
+  const handleRemoveBookmark = async (postId: string) => {
+    setIsModifyingBookmarks(true);
+    try {
+      await removeBookmark(supabase, user, postId);
+      queryClient.invalidateQueries({ queryKey: ["bookmarkedPosts"] });
+      toast.success("Removed bookmark");
+    } catch {
+      toast.error("Couldn't remove bookmark");
+    } finally {
+      setIsModifyingBookmarks(false);
+    }
   };
 
-  const handleClearAll = () => {
-    if (typeof window === "undefined" || bookmarkIds.length === 0) return;
+  const handleClearAll = async () => {
+    if (posts.length === 0) return;
 
-    window.localStorage.setItem("bookmarkedPosts", JSON.stringify([]));
-    setBookmarkIds([]);
-    toast.success("Cleared all bookmarks");
+    setIsModifyingBookmarks(true);
+    try {
+      await clearBookmarks(supabase, user);
+      queryClient.invalidateQueries({ queryKey: ["bookmarkedPosts"] });
+      toast.success("Cleared all bookmarks");
+    } catch {
+      toast.error("Couldn't clear bookmarks");
+    } finally {
+      setIsModifyingBookmarks(false);
+    }
   };
 
   return (
@@ -102,12 +129,13 @@ export default function BookmarksPage({ user }: BookmarksPageProps) {
           </p>
         </div>
 
-        {bookmarkIds.length > 0 && (
+        {posts.length > 0 && (
           <div className="flex justify-end">
             <Button
               variant="outline"
               className="rounded-full"
               onClick={handleClearAll}
+              disabled={isBusy}
             >
               Clear all
             </Button>
@@ -144,6 +172,7 @@ export default function BookmarksPage({ user }: BookmarksPageProps) {
                     event.stopPropagation();
                     handleRemoveBookmark(post.id);
                   }}
+                  disabled={isBusy}
                 >
                   <BookmarkX className="h-4 w-4" />
                   <span className="sr-only">Remove bookmark</span>
