@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -19,45 +19,77 @@ import { GetServerSidePropsContext } from "next";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
 import { User } from "@supabase/supabase-js";
 import { Toaster, toast } from "sonner";
+import {
+  addBookmark,
+  isPostBookmarked,
+  removeBookmark,
+} from "@/utils/supabase/queries/bookmark";
 
 type PostPageProps = { user: User };
 
 export default function PostPage({ user }: PostPageProps) {
   const router = useRouter();
   const supabase = createSupabaseComponentClient();
-  const postId = router.query.id as string;
+  const postId = typeof router.query.id === "string" ? router.query.id : null;
+  const queryClient = useQueryClient();
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["post", postId],
-    queryFn: async () => await getPost(supabase, user, postId),
+    queryFn: async () => {
+      if (!postId) {
+        throw new Error("Missing post id");
+      }
+
+      return await getPost(supabase, user, postId);
+    },
     enabled: !!postId,
   });
 
   const [bookmarked, setBookmarked] = useState(false);
+  const [isUpdatingBookmark, setIsUpdatingBookmark] = useState(false);
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
-  // initialize bookmark state
-  useEffect(() => {
-    if (!postId) return;
-    const list = JSON.parse(localStorage.getItem("bookmarkedPosts") || "[]");
-    setBookmarked(list.includes(postId));
-  }, [postId]);
+  const { data: isBookmarked, isLoading: isBookmarkStatusLoading } = useQuery({
+    queryKey: ["bookmark", user.id, postId],
+    queryFn: async () => {
+      if (!postId) {
+        return false;
+      }
 
-  const toggleBookmark = () => {
-    const list: string[] = JSON.parse(
-      localStorage.getItem("bookmarkedPosts") || "[]",
-    );
-    if (bookmarked) {
-      const updated = list.filter((id) => id !== postId);
-      localStorage.setItem("bookmarkedPosts", JSON.stringify(updated));
-      setBookmarked(false);
-      toast.success("Removed bookmark");
-    } else {
-      list.push(postId);
-      localStorage.setItem("bookmarkedPosts", JSON.stringify(list));
-      setBookmarked(true);
-      toast.success("Bookmarked!");
+      return await isPostBookmarked(supabase, user, postId);
+    },
+    enabled: !!postId,
+  });
+
+  useEffect(() => {
+    if (typeof isBookmarked === "boolean") {
+      setBookmarked(isBookmarked);
+    }
+  }, [isBookmarked]);
+
+  const toggleBookmark = async () => {
+    if (!postId || isUpdatingBookmark) return;
+
+    setIsUpdatingBookmark(true);
+
+    try {
+      if (bookmarked) {
+        await removeBookmark(supabase, user, postId);
+        setBookmarked(false);
+        toast.success("Removed bookmark");
+      } else {
+        await addBookmark(supabase, user, postId);
+        setBookmarked(true);
+        toast.success("Bookmarked!");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["bookmarkedPosts"] });
+      queryClient.invalidateQueries({ queryKey: ["bookmark", user.id, postId] });
+    } catch {
+      toast.error("Couldn't update bookmark");
+    } finally {
+      setIsUpdatingBookmark(false);
     }
   };
 
@@ -139,6 +171,7 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={toggleBookmark}
+              disabled={isUpdatingBookmark || isBookmarkStatusLoading}
             >
               <Bookmark
                 className={

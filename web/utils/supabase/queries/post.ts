@@ -259,6 +259,60 @@ export const getLikesFeed = async (
 };
 
 /**
+ * Loads a collection of posts by their IDs while preserving the original order.
+ *
+ * @param supabase - Supabase client to use.
+ * @param user - Active user making the request.
+ * @param postIds - Array of post IDs to fetch.
+ * @returns - Array of Post objects.
+ */
+export const getPostsByIds = async (
+  supabase: SupabaseClient,
+  _user: User,
+  postIds: string[],
+): Promise<z.infer<typeof Post>[]> => {
+  if (postIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("post")
+    .select(
+      `
+      id,
+      content,
+      posted_at,
+      attachment_url,
+      author:author_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      ),
+      likes:like (
+        profile_id
+      )
+    `,
+    )
+    .in("id", postIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  const posts = Post.array().parse(data);
+  const position = new Map(postIds.map((id, index) => [id, index]));
+
+  return posts.sort(
+    (a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0),
+  );
+};
+
+/**
  * This function toggles the like status of a post for a user.
  *
  * @param supabase - Supabase client to use.

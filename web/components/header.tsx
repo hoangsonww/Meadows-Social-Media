@@ -1,4 +1,4 @@
-import { Leaf, LogOut, UserRound } from "lucide-react";
+import { Bookmark, Leaf, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
@@ -72,6 +72,13 @@ export default function Header() {
               align="end"
               className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
             >
+              <DropdownMenuItem
+                className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => router.push("/bookmarks")}
+              >
+                <Bookmark className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                Bookmarks
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => router.push(`/profile/${data.id}`)}
