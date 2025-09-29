@@ -40,9 +40,13 @@ export const getBookmarkedPosts = async (
     return [];
   }
 
-  return data
-    .filter((row): row is { post: unknown } => row.post !== null)
-    .map((row) => Post.parse(row.post));
+  return data.reduce<z.infer<typeof Post>[]>((posts, row) => {
+    if (row.post) {
+      posts.push(Post.parse(row.post));
+    }
+
+    return posts;
+  }, []);
 };
 
 /** Checks whether the given post is bookmarked by the authenticated user. */
