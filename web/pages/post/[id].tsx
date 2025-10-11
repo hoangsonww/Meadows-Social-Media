@@ -70,7 +70,7 @@ export default function PostPage({ user }: PostPageProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: post?.content.slice(0, 50) || "Check this post",
+          title: post?.content?.slice(0, 50) || "Check this post",
           url: currentUrl,
         });
       } catch {}
@@ -92,15 +92,15 @@ export default function PostPage({ user }: PostPageProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center w-full h-64">
-        <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+        <Loader2 className="animate-spin h-8 w-8 text-foreground/70" />
       </div>
     );
   }
 
   return (
     <>
-      <Toaster position="bottom-center" />
-      <div className="flex flex-col w-full min-h-screen bg-background p-4 space-y-6">
+      <Toaster position="bottom-center" theme="system" richColors />
+      <main className="flex flex-col w-full min-h-screen min-h-[100svh] min-h-dvh bg-background text-foreground p-4 space-y-6">
         <div className="flex items-center justify-between w-full mb-4">
           <Button
             variant="ghost"
@@ -115,6 +115,7 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={handleCopyLink}
+              aria-label="Copy link"
             >
               <Copy />
             </Button>
@@ -123,6 +124,7 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={handleShare}
+              aria-label="Share"
             >
               <Share2 />
             </Button>
@@ -131,6 +133,7 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={handleEmailLink}
+              aria-label="Email link"
             >
               <Mail />
             </Button>
@@ -139,6 +142,8 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={toggleBookmark}
+              aria-pressed={bookmarked}
+              aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
             >
               <Bookmark
                 className={
@@ -151,17 +156,18 @@ export default function PostPage({ user }: PostPageProps) {
               size="icon"
               className="transition-transform duration-200 hover:scale-105"
               onClick={handlePrint}
+              aria-label="Print"
             >
               <Printer />
             </Button>
           </div>
         </div>
         {post && (
-          <Card className="w-full rounded-2xl shadow-lg transition-shadow duration-300 hover:shadow-2xl">
+          <Card className="w-full rounded-2xl shadow-lg transition-shadow duration-300 hover:shadow-2xl bg-card text-card-foreground border border-border">
             <PostCard user={user} post={post} />
           </Card>
         )}
-      </div>
+      </main>
     </>
   );
 }
@@ -171,7 +177,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   // require login
-  if (userError || !userData) {
+  if (userError || !userData?.user) {
     return {
       redirect: { destination: "/login", permanent: false },
     };

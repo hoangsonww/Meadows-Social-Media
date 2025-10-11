@@ -1,33 +1,25 @@
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Toaster, toast } from "sonner";
+import { Leaf, Loader2, Eye, EyeOff } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
-import { useQueryClient } from "@tanstack/react-query";
-import { Leaf, Loader2, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { useState } from "react";
-import { Toaster, toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  /**
-   * This function handles the login process for the user.
-   * It checks if the email and password fields are filled out,
-   * and if so, it attempts to sign in the user using Supabase's
-   * authentication method. If the login is successful, it resets
-   * the user profile query and redirects the user to the home page.
-   * If there is an error, it alerts the user with the error message.
-   *
-   * @returns - void
-   */
   const logIn = async () => {
     if (!email || !password) {
       toast.error("Please enter both email and password!");
@@ -57,83 +49,121 @@ export default function LoginPage() {
 
   return (
     <>
-      <Toaster position="bottom-center" />
-      <div className="flex min-h-[calc(100svh-164px)] flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
-        <div className="w-full max-w-sm">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col items-center gap-2">
-                <a
-                  href="#"
-                  className="flex flex-col items-center gap-2 font-medium"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md">
-                    <Leaf className="size-6" />
-                  </div>
-                </a>
-                <h1 className="text-xl font-bold">Log in to Meadow</h1>
-                <p className="text-sm text-center">
-                  Welcome back! Log in to your account to continue.
-                </p>
+      {/* Use system theme and richer colors so toast stays readable in dark mode */}
+      <Toaster position="bottom-center" theme="system" richColors />
+      <main
+        className="
+          flex min-h-screen min-h-[100svh] min-h-dvh w-full items-center justify-center
+          bg-background text-foreground
+        "
+      >
+        <div className="w-full max-w-md px-4 sm:px-6">
+          <section
+            className="
+              rounded-2xl border border-border bg-background/95 p-6 shadow-sm backdrop-blur
+              supports-[backdrop-filter]:bg-background/80
+            "
+          >
+            <header className="mb-6 flex flex-col items-center text-center">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-foreground/10 text-foreground">
+                <Leaf className="size-6" aria-hidden="true" />
               </div>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Log in to Meadow
+              </h1>
+              <p className="mt-1 text-sm text-foreground/80">
+                Welcome back! Log in to your account to continue.
+              </p>
+            </header>
+
+            <form
+              className="grid gap-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                logIn();
+              }}
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="email" className="text-foreground">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="m@example.com"
+                  autoComplete="email"
+                  required
+                  disabled={isLoading}
+                  className="
+                    bg-background text-foreground placeholder:text-foreground/60
+                    border-input ring-offset-background
+                  "
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="password" className="text-foreground">
+                  Password
+                </Label>
+                <div className="relative">
                   <Input
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="m@example.com"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
                     required
                     disabled={isLoading}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") logIn();
-                    }}
+                    className="
+                      pr-10 bg-background text-foreground placeholder:text-foreground/60
+                      border-input ring-offset-background
+                    "
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      className="pr-10"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") logIn();
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-2 flex items-center p-1 text-muted-foreground hover:text-primary"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                    </button>
-                  </div>
-                </div>
-                <Button className="w-full" onClick={logIn} disabled={isLoading}>
-                  {isLoading ? (
-                    <Loader2 className="animate-spin h-5 w-5" />
-                  ) : (
-                    "Login"
-                  )}
-                </Button>
-                <div className="text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/signup" className="underline underline-offset-4">
-                    Sign up here!
-                  </Link>
+                  <button
+                    type="button"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="
+                      absolute inset-y-0 right-2 inline-flex items-center rounded-md p-1
+                      text-foreground/70 hover:text-foreground focus:outline-none
+                      focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                      focus-visible:ring-offset-background
+                    "
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Logging in…
+                  </span>
+                ) : (
+                  "Login"
+                )}
+              </Button>
+
+              <p className="text-center text-sm text-foreground/80">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="underline underline-offset-4 text-primary"
+                >
+                  Sign up here!
+                </Link>
+              </p>
+            </form>
+          </section>
         </div>
-      </div>
+      </main>
     </>
   );
 }

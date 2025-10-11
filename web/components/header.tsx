@@ -28,7 +28,7 @@ export default function Header() {
   });
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white dark:bg-black shadow-md px-4 py-2 flex items-center justify-between">
+    <header className="sticky top-0 z-50 w-full bg-background text-foreground border-b border-border shadow-md px-4 py-2 flex items-center justify-between">
       {/* Logo + Home link */}
       <Link
         href="/home"
@@ -36,11 +36,9 @@ export default function Header() {
       >
         <Leaf className="w-6 h-6 text-green-600 dark:text-green-400" />
         <div className="flex flex-col leading-tight">
-          <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            Meadows
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Socialize & Share Stylishly
+          <p className="text-xl font-bold text-foreground">Meadows</p>
+          <p className="text-sm text-muted-foreground">
+            Socialize &amp; Share Stylishly
           </p>
         </div>
       </Link>
@@ -63,31 +61,31 @@ export default function Header() {
                       .getPublicUrl(data.avatar_url ?? "").data.publicUrl
                   }
                 />
-                <AvatarFallback>
+                <AvatarFallback className="bg-muted text-foreground">
                   {data.name!.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg"
+              className="w-48 bg-popover text-popover-foreground border border-border rounded-xl shadow-lg"
             >
               <DropdownMenuItem
-                className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-muted focus:bg-muted"
                 onClick={() => router.push(`/profile/${data.id}`)}
               >
-                <UserRound className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <UserRound className="w-5 h-5 text-foreground" />
                 My Profile
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="flex items-center gap-2 px-4 py-2 cursor-pointer rounded-lg hover:bg-muted focus:bg-muted"
                 onClick={async () => {
                   await supabase.auth.signOut();
                   queryClient.resetQueries({ queryKey: ["user_profile"] });
                   router.push("/");
                 }}
               >
-                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <LogOut className="w-5 h-5 text-foreground" />
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>

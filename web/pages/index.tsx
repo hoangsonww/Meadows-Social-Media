@@ -399,6 +399,10 @@ export default function Landing() {
             <Users className="size-5" />
             Join Meadows
           </Btn>
+          <Btn href="/login" outline>
+            <Send className="size-5" />
+            Log In
+          </Btn>
           <Btn
             href="https://github.com/hoangsonww/Meadows-Social-Media"
             outline
