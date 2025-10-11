@@ -64,15 +64,15 @@ function Modal({
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-md max-h-[95vh] overflow-y-auto rounded-xl bg-background shadow-xl p-4">
+      <div className="relative z-50 w-full max-w-md max-h-[95vh] overflow-y-auto rounded-xl bg-background text-foreground shadow-xl p-4 border border-border">
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          className="absolute top-4 right-4 rounded-full p-1 transition hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <X className="h-5 w-5 text-muted-foreground" />
         </button>
-        <h2 className="mb-4 text-lg font-semibold">{title}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{title}</h2>
         {isEmpty ? (
           <p className="text-center text-muted-foreground">{emptyMessage}</p>
         ) : (
@@ -169,8 +169,8 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
 
   return (
     <>
-      <Toaster position="bottom-center" />
-      <div className="min-h-screen w-full space-y-6 bg-background p-4">
+      <Toaster position="bottom-center" theme="system" richColors />
+      <div className="min-h-screen w-full space-y-6 bg-background text-foreground p-4">
         <div className="mb-4 flex items-center">
           <Button
             variant="ghost"
@@ -182,7 +182,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         </div>
 
         {profile && (
-          <Card className="w-full rounded-xl transition-shadow duration-200 hover:shadow-lg">
+          <Card className="w-full rounded-xl transition-shadow duration-200 hover:shadow-lg bg-card text-card-foreground border border-border">
             <CardContent className="space-y-4 py-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -194,12 +194,12 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                           .getPublicUrl(profile.avatar_url ?? "").data.publicUrl
                       }
                     />
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-muted text-foreground">
                       {profile.name.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-bold text-primary">{profile.name}</p>
+                    <p className="font-bold text-foreground">{profile.name}</p>
                     <p className="text-muted-foreground">@{profile.handle}</p>
                   </div>
                 </div>
@@ -279,7 +279,9 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                     onClick={onClick}
                     className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
                   >
-                    <span className="text-2xl font-bold">{count}</span>
+                    <span className="text-2xl font-bold text-foreground">
+                      {count}
+                    </span>
                     <span className="text-sm text-muted-foreground">
                       {label}
                     </span>
@@ -291,18 +293,18 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         )}
 
         <ScrollArea
+          className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg bg-card text-card-foreground border border-border"
           ref={postFeedRef}
-          className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg"
         >
           <div className="px-2 py-4">
-            <p className="mb-2 text-lg font-bold">
+            <p className="mb-2 text-lg font-bold text-foreground">
               {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
             </p>
             <Separator />
             <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
             {isFetchingNextPage && (
               <div className="py-4 flex justify-center">
-                <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
+                <Loader2 className="animate-spin h-6 w-6 text-foreground/70" />
               </div>
             )}
           </div>
@@ -333,12 +335,14 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                         .getPublicUrl(f.avatar_url ?? "").data.publicUrl
                     }
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-muted text-foreground">
                     {f.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold group-hover:underline">{f.name}</p>
+                  <p className="font-bold group-hover:underline text-foreground">
+                    {f.name}
+                  </p>
                   <p className="text-sm text-muted-foreground group-hover:underline">
                     @{f.handle}
                   </p>
@@ -373,12 +377,14 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                         .getPublicUrl(f.avatar_url ?? "").data.publicUrl
                     }
                   />
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-muted text-foreground">
                     {f.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold group-hover:underline">{f.name}</p>
+                  <p className="font-bold group-hover:underline text-foreground">
+                    {f.name}
+                  </p>
                   <p className="text-sm text-muted-foreground group-hover:underline">
                     @{f.handle}
                   </p>

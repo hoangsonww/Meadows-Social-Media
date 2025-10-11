@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { InView } from "react-intersection-observer";
 import PostCard from "@/components/post";
 import { Separator } from "@/components/ui/separator";
@@ -28,7 +28,7 @@ import { User } from "@supabase/supabase-js";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronsDown,
-  ChevronsLeft,
+  ChevronsUp,
   ImagePlus,
   RotateCcw,
   Send,
@@ -62,6 +62,12 @@ export default function HomePage({ user, profile }: HomePageProps) {
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const avatarUrl = useMemo(() => {
+    const key = profile?.avatar_url ?? "";
+    if (!key) return undefined;
+    return supabase.storage.from("avatars").getPublicUrl(key).data.publicUrl;
+  }, [profile?.avatar_url, supabase]);
+
   const fetchDataFn =
     activeTab === HomePageTab.FEED
       ? getFeed
@@ -86,7 +92,9 @@ export default function HomePage({ user, profile }: HomePageProps) {
     initialPageParam: 0,
   });
 
-  const refresh = () => queryClient.resetQueries();
+  const refresh = () =>
+    // more targeted than resetQueries()
+    queryClient.invalidateQueries({ queryKey: ["posts"] });
 
   const publishPost = async () => {
     if (!postDraftText.trim()) return;
@@ -106,64 +114,72 @@ export default function HomePage({ user, profile }: HomePageProps) {
 
   return (
     <>
-      <Toaster position="bottom-center" />
-      <div className="scroll-smooth flex flex-col items-center w-full min-h-screen px-4">
-        <div className="w-full mb-8">
+      <Toaster position="bottom-center" theme="system" richColors />
+      <main className="flex min-h-screen min-h-[100svh] min-h-dvh w-full items-start justify-center bg-background text-foreground">
+        <div className="w-full max-w-3xl px-4 sm:px-6 py-4 sm:py-6">
           {/* Post draft card */}
-          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md mt-4">
+          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md mt-2 border-border bg-card text-card-foreground">
             <CardHeader className="py-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="transition-colors ease-in-out duration-300 hover:text-primary">
+                <CardTitle className="transition-colors ease-in-out duration-300">
                   Write a Post
                 </CardTitle>
                 {expandPostDraft ? (
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Collapse composer"
+                    aria-expanded={expandPostDraft}
                     className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                     onClick={() => setExpandPostDraft(false)}
                   >
-                    <ChevronsDown />
+                    <ChevronsUp />
                   </Button>
                 ) : (
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Expand composer"
+                    aria-expanded={expandPostDraft}
                     className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                     onClick={() => setExpandPostDraft(true)}
                   >
-                    <ChevronsLeft />
+                    <ChevronsDown />
                   </Button>
                 )}
               </div>
             </CardHeader>
+
             {expandPostDraft && (
               <>
                 <CardContent className="space-y-2 pb-3">
                   <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <Avatar className="mt-1 flex-shrink-0 rounded-full transition-transform ease-in-out duration-300 hover:scale-[1.02]">
+                    <Avatar className="mt-1 flex-shrink-0 rounded-full">
                       <AvatarImage
-                        src={
-                          supabase.storage
-                            .from("avatars")
-                            .getPublicUrl(profile.avatar_url ?? "").data
-                            .publicUrl
-                        }
+                        src={avatarUrl}
+                        alt={profile?.name ?? "User"}
                       />
-                      <AvatarFallback>
-                        {profile.name.slice(0, 2).toUpperCase()}
+                      <AvatarFallback className="bg-muted text-foreground/90">
+                        {(profile?.name ?? "??").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
+
                     <Textarea
                       value={postDraftText}
                       onChange={(e) => setPostDraftText(e.target.value)}
-                      className="flex-1 h-28 rounded-2xl transition-shadow ease-in-out duration-300 focus:shadow-outline"
+                      className="
+                        flex-1 h-28 rounded-2xl
+                        bg-background text-foreground placeholder:text-foreground/60
+                        focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
+                        focus-visible:ring-offset-background
+                      "
                       placeholder="What's on your mind? Share your thoughts, ideas, or experiences with the world!"
                     />
                   </div>
                 </CardContent>
+
                 <CardFooter className="pb-3">
-                  <div className="flex flex-wrap gap-3 justify-end">
+                  <div className="flex flex-wrap gap-3 justify-end w-full">
                     <Input
                       className="hidden"
                       type="file"
@@ -173,38 +189,47 @@ export default function HomePage({ user, profile }: HomePageProps) {
                         setSelectedFile(e.target.files?.[0] ?? null)
                       }
                     />
+
                     {selectedFile ? (
                       <Button
+                        type="button"
                         variant="secondary"
                         className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                         onClick={() => setSelectedFile(null)}
                       >
-                        <ImagePlus />
-                        <p className="text-sm max-w-xs truncate">
+                        <ImagePlus className="mr-2" />
+                        <span className="text-sm max-w-xs truncate">
                           {selectedFile.name}
-                        </p>
-                        <X />
+                        </span>
+                        <X className="ml-2" />
                       </Button>
                     ) : (
                       <Button
+                        type="button"
                         variant="secondary"
                         size="icon"
                         className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                         onClick={() => fileInputRef.current?.click()}
+                        aria-label="Attach image"
                       >
                         <ImagePlus />
                       </Button>
                     )}
+
                     <Button
                       className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                       onClick={publishPost}
                       disabled={!postDraftText.trim() || isPosting}
+                      aria-busy={isPosting}
                     >
                       {isPosting ? (
-                        <Loader2 className="animate-spin h-5 w-5" />
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="animate-spin h-5 w-5" />
+                          Posting…
+                        </span>
                       ) : (
                         <>
-                          <Send /> Post
+                          <Send className="mr-2" /> Post
                         </>
                       )}
                     </Button>
@@ -218,34 +243,53 @@ export default function HomePage({ user, profile }: HomePageProps) {
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full mt-8"
+            className="w-full mt-6"
           >
             <div className="flex items-center justify-between gap-2">
-              <TabsList className="grid grid-cols-3 flex-1 rounded-lg">
+              <TabsList
+                className="
+                  grid grid-cols-3 flex-1 rounded-lg border border-border
+                  bg-muted/30 backdrop-blur supports-[backdrop-filter]:bg-muted/25
+                "
+              >
                 <TabsTrigger
                   value={HomePageTab.FEED}
-                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                  className="
+                    transition-colors duration-200
+                    data-[state=active]:bg-card data-[state=active]:text-foreground
+                    data-[state=active]:shadow-sm
+                  "
                 >
                   Feed
                 </TabsTrigger>
                 <TabsTrigger
                   value={HomePageTab.FOLLOWING}
-                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                  className="
+                    transition-colors duration-200
+                    data-[state=active]:bg-card data-[state=active]:text-foreground
+                    data-[state=active]:shadow-sm
+                  "
                 >
                   Following
                 </TabsTrigger>
                 <TabsTrigger
                   value={HomePageTab.LIKED}
-                  className="transition-colors ease-in-out duration-300 hover:text-primary"
+                  className="
+                    transition-colors duration-200
+                    data-[state=active]:bg-card data-[state=active]:text-foreground
+                    data-[state=active]:shadow-sm
+                  "
                 >
                   Liked
                 </TabsTrigger>
               </TabsList>
+
               <Button
                 variant="secondary"
                 size="icon"
                 className="rounded-full transition-transform ease-in-out duration-300 hover:scale-[1.02]"
                 onClick={refresh}
+                aria-label="Refresh feed"
               >
                 <RotateCcw />
               </Button>
@@ -256,7 +300,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
           <div className="mt-4 space-y-6 w-full">
             {isInitialLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+                <Loader2 className="animate-spin h-8 w-8 text-foreground/70" />
               </div>
             ) : (
               posts?.pages.map((page, pi) =>
@@ -265,11 +309,14 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     <div className="w-full rounded-3xl transition-all ease-in-out duration-300 hover:shadow-lg">
                       <PostCard user={user} post={post} />
                     </div>
-                    <Separator className="transition-colors ease-in-out duration-300 hover:bg-muted-foreground" />
+
+                    <Separator className="bg-border" />
+
                     {pi === posts.pages.length - 1 &&
                       idx === page.length - 1 &&
                       hasNextPage && (
                         <InView
+                          rootMargin="200px 0px"
                           onChange={(inView) => inView && fetchNextPage()}
                         />
                       )}
@@ -278,15 +325,14 @@ export default function HomePage({ user, profile }: HomePageProps) {
               )
             )}
 
-            {/* Spinner for infinite-fetch */}
             {isFetchingNextPage && (
               <div className="flex justify-center py-4">
-                <Loader2 className="animate-spin h-6 w-6 text-muted-foreground" />
+                <Loader2 className="animate-spin h-6 w-6 text-foreground/70" />
               </div>
             )}
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }
@@ -298,7 +344,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  if (userError || !userData) {
+  if (userError || !userData?.user) {
     return {
       redirect: { destination: "/login", permanent: false },
     };
