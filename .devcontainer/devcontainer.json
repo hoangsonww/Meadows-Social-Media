@@ -1,5 +1,5 @@
 {
-    "name": "COMP 426 a06 Container",
+    "name": "Meadows App Container",
     "dockerFile": "Dockerfile",
     
     // Forward ports
