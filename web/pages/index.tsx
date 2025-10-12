@@ -403,13 +403,6 @@ export default function Landing() {
             <Send className="size-5" />
             Log In
           </Btn>
-          <Btn
-            href="https://github.com/hoangsonww/Meadows-Social-Media"
-            outline
-          >
-            <Github className="size-5" />
-            GitHub
-          </Btn>
         </motion.div>
         <motion.div
           variants={fadeUp}
