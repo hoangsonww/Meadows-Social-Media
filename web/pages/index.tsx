@@ -692,7 +692,7 @@ export default function Landing() {
         className={`${displayFont.variable} ${bodyFont.variable} landing-root`}
       >
         {/* ------------------------------ Hero ------------------------------- */}
-        <header className="relative flex flex-col items-center justify-center min-h-[90svh] md:min-h-dvh bg-neutral-950 text-white overflow-hidden px-4 pt-20 pb-16 text-center">
+        <header className="relative flex flex-col items-center justify-center min-h-[100svh] md:min-h-dvh bg-neutral-950 text-white overflow-hidden px-4 pt-20 pb-16 text-center">
           <div className="absolute -z-10 inset-0 bg-gradient-to-br from-emerald-600/40 to-purple-700/40 blur-3xl opacity-30" />
           <div className="absolute -z-10 -top-16 left-1/2 h-[420px] w-[420px] -translate-x-1/2 rounded-full bg-emerald-500/20 blur-[120px]" />
           <motion.h1
@@ -755,7 +755,7 @@ export default function Landing() {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             transition={{ ...revealTransition, delay: 0.75 }}
-            className="absolute bottom-8 hidden sm:flex"
+            className="absolute bottom-6 flex"
           >
             <Btn
               href="#highlights"
