@@ -54,23 +54,21 @@ export default function LoginPage() {
       <main
         className="
           flex min-h-screen min-h-[100svh] min-h-dvh w-full items-center justify-center
-          px-4 text-foreground
+          overflow-x-hidden px-4 text-foreground
         "
       >
-        <div className="relative w-full max-w-md">
-          <div className="pointer-events-none absolute -left-10 -top-8 h-28 w-28 rounded-full bg-primary/25 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-accent/20 blur-2xl" />
+        <div className="relative w-full max-w-md overflow-x-hidden">
           <section
             className="
-              relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-card/90 p-7 shadow-soft-xl backdrop-blur
+              relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-transparent p-5 shadow-none sm:p-7
             "
           >
-            <div className="pointer-events-none absolute right-5 top-4 inline-flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <div className="pointer-events-none absolute right-5 top-4 inline-flex items-center gap-1 rounded-full border border-border/70 bg-transparent px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               <Sparkles className="size-3.5 text-primary" />
               Login
             </div>
             <header className="mb-6 flex flex-col items-center text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-soft-xl">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-border/70 bg-transparent text-primary shadow-none">
                 <Leaf className="size-6" aria-hidden="true" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight">
@@ -101,7 +99,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   required
                   disabled={isLoading}
-                  className="bg-card/80"
+                  className="bg-transparent shadow-none"
                 />
               </div>
 
@@ -118,7 +116,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     required
                     disabled={isLoading}
-                    className="bg-card/80 pr-10"
+                    className="bg-transparent pr-10 shadow-none"
                   />
                   <button
                     type="button"
@@ -139,7 +137,11 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full shadow-none"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-5 w-5 animate-spin" />
