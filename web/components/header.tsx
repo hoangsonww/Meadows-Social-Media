@@ -135,7 +135,7 @@ export default function Header() {
                   Home Feed
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="cursor-pointer"
+                  className="cursor-pointer text-red-500 focus:bg-red-500/10 focus:text-red-500 dark:text-red-400 dark:focus:bg-red-400/10 dark:focus:text-red-400"
                   onClick={async () => {
                     await supabase.auth.signOut();
                     queryClient.resetQueries({ queryKey: ["user_profile"] });

@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Head from "next/head";
 import { motion } from "framer-motion";
+import { GetServerSidePropsContext } from "next";
 import {
   Activity,
   BadgeCheck,
@@ -33,6 +34,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
 
 /* dynamic import for client-only count-up */
 const CountUp = dynamic(() => import("react-countup"), { ssr: false });
@@ -623,7 +625,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 /*                                Main Page                                   */
 /* -------------------------------------------------------------------------- */
 
-export default function Landing() {
+type LandingProps = {
+  isAuthenticated: boolean;
+};
+
+export default function Landing({ isAuthenticated }: LandingProps) {
   const typedLine = useTypewriter(heroLines);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -731,10 +737,17 @@ export default function Landing() {
               <Users className="size-5" />
               Join Meadows
             </Btn>
-            <Btn href="/login" outline>
-              <Send className="size-5" />
-              Log In
-            </Btn>
+            {isAuthenticated ? (
+              <Btn href="/home" outline>
+                <Sparkles className="size-5" />
+                Home Feed
+              </Btn>
+            ) : (
+              <Btn href="/login" outline>
+                <Send className="size-5" />
+                Log In
+              </Btn>
+            )}
           </motion.div>
           <motion.div
             variants={revealVariants}
@@ -1056,4 +1069,15 @@ export default function Landing() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const supabase = createSupabaseServerClient(context);
+  const { data, error } = await supabase.auth.getUser();
+
+  return {
+    props: {
+      isAuthenticated: Boolean(data?.user) && !error,
+    },
+  };
 }
