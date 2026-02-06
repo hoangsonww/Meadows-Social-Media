@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Toaster, toast } from "sonner";
-import { Leaf, Loader2, Eye, EyeOff } from "lucide-react";
+import { Leaf, Loader2, Eye, EyeOff, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,24 +54,29 @@ export default function LoginPage() {
       <main
         className="
           flex min-h-screen min-h-[100svh] min-h-dvh w-full items-center justify-center
-          bg-background text-foreground
+          px-4 text-foreground
         "
       >
-        <div className="w-full max-w-md px-4 sm:px-6">
+        <div className="relative w-full max-w-md">
+          <div className="pointer-events-none absolute -left-10 -top-8 h-28 w-28 rounded-full bg-primary/25 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-accent/20 blur-2xl" />
           <section
             className="
-              rounded-2xl border border-border bg-background/95 p-6 shadow-sm backdrop-blur
-              supports-[backdrop-filter]:bg-background/80
+              relative overflow-hidden rounded-[1.5rem] border border-border/70 bg-card/90 p-7 shadow-soft-xl backdrop-blur
             "
           >
+            <div className="pointer-events-none absolute right-5 top-4 inline-flex items-center gap-1 rounded-full bg-muted/70 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              <Sparkles className="size-3.5 text-primary" />
+              Login
+            </div>
             <header className="mb-6 flex flex-col items-center text-center">
-              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-foreground/10 text-foreground">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-soft-xl">
                 <Leaf className="size-6" aria-hidden="true" />
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight">
+              <h1 className="text-3xl font-bold tracking-tight">
                 Log in to Meadow
               </h1>
-              <p className="mt-1 text-sm text-foreground/80">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Welcome back! Log in to your account to continue.
               </p>
             </header>
@@ -96,10 +101,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   required
                   disabled={isLoading}
-                  className="
-                    bg-background text-foreground placeholder:text-foreground/60
-                    border-input ring-offset-background
-                  "
+                  className="bg-card/80"
                 />
               </div>
 
@@ -116,10 +118,7 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     required
                     disabled={isLoading}
-                    className="
-                      pr-10 bg-background text-foreground placeholder:text-foreground/60
-                      border-input ring-offset-background
-                    "
+                    className="bg-card/80 pr-10"
                   />
                   <button
                     type="button"
@@ -151,11 +150,11 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              <p className="text-center text-sm text-foreground/80">
+              <p className="text-center text-sm text-muted-foreground">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/signup"
-                  className="underline underline-offset-4 text-primary"
+                  className="font-semibold text-primary underline underline-offset-4"
                 >
                   Sign up here!
                 </Link>

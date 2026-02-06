@@ -1,4 +1,4 @@
-import { Heart } from "lucide-react";
+import { ArrowUpRight, Clock3, Heart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { z } from "zod";
@@ -29,86 +29,135 @@ export default function PostCard({ user, post }: PostCardProps) {
 
   const likedByUser = post.likes.some((like) => like.profile_id === user.id);
   const [isLiked, setIsLiked] = useState<boolean>(likedByUser);
-  const numberOfLikes = likedByUser ? post.likes.length - 1 : post.likes.length;
+  const [likeCount, setLikeCount] = useState<number>(post.likes.length);
+  const postedAt = new Date(post.posted_at);
+  const postedAtLabel = postedAt.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const profileAvatarUrl = supabase.storage
+    .from("avatars")
+    .getPublicUrl(post.author.avatar_url ?? "").data.publicUrl;
+  const postImageUrl = post.attachment_url
+    ? supabase.storage.from("images").getPublicUrl(post.attachment_url).data
+        .publicUrl
+    : null;
+  const openPost = () => router.push(`/post/${post.id}`);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await toggleLike(supabase, user, post.id);
-    setIsLiked(!isLiked);
-    queryClient.invalidateQueries({ queryKey: ["posts"], refetchType: "all" });
-    queryClient.invalidateQueries({
-      queryKey: ["post", post.id],
-      refetchType: "all",
-    });
-    toast.success(isLiked ? "Unliked post" : "Liked post");
+    const previousLiked = isLiked;
+    const previousCount = likeCount;
+    const nextLiked = !isLiked;
+    setIsLiked(nextLiked);
+    setLikeCount((count) => (nextLiked ? count + 1 : Math.max(count - 1, 0)));
+    try {
+      await toggleLike(supabase, user, post.id);
+      queryClient.invalidateQueries({
+        queryKey: ["posts"],
+        refetchType: "all",
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["post", post.id],
+        refetchType: "all",
+      });
+      toast.success(nextLiked ? "Liked post" : "Unliked post");
+    } catch {
+      setIsLiked(previousLiked);
+      setLikeCount(previousCount);
+      toast.error("Couldn't update like right now.");
+    }
   };
 
   return (
     <div
-      className="flex w-full gap-3 p-6 cursor-pointer"
-      onClick={() => router.push(`/post/${post.id}`)}
+      className="group relative w-full cursor-pointer overflow-hidden rounded-[1.6rem] border border-border/70 bg-card/85 p-4 shadow-soft-xl transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-2xl sm:p-5"
+      onClick={openPost}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openPost();
+        }
+      }}
     >
-      <Avatar className="flex-shrink-0">
-        <AvatarImage
-          src={
-            supabase.storage
-              .from("avatars")
-              .getPublicUrl(post.author.avatar_url ?? "").data.publicUrl
-          }
-        />
-        <AvatarFallback>
-          {post.author.name.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.08] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-      <div className="flex flex-col gap-3 w-full min-w-0">
-        {/* header: author + like, wraps when too wide */}
-        <div className="flex flex-wrap justify-between items-center gap-2 w-full">
-          <Link href={`/profile/${post.author.id}`} legacyBehavior>
-            <a
-              className="flex flex-wrap items-center gap-2 break-words"
+      <div className="relative flex w-full gap-3 sm:gap-4">
+        <Avatar className="mt-0.5 h-11 w-11 flex-shrink-0">
+          <AvatarImage src={profileAvatarUrl} />
+          <AvatarFallback>
+            {post.author.name.slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex w-full flex-wrap items-start justify-between gap-2">
+            <Link
+              href={`/profile/${post.author.id}`}
+              className="flex min-w-0 flex-col leading-tight"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="text-primary font-bold hover:underline break-all">
+              <p className="truncate text-[15.5px] font-bold text-foreground transition-colors group-hover:text-primary">
                 {post.author.name}
               </p>
-              <p className="text-muted-foreground hover:underline break-all">
+              <p className="truncate text-sm text-muted-foreground">
                 @{post.author.handle}
               </p>
-            </a>
-          </Link>
-          <div className="flex-shrink-0">
-            <Button variant="ghost" onClick={handleLike}>
-              <p
-                className={`text-sm ${
-                  isLiked ? "text-pink-600" : "text-muted-foreground"
-                }`}
-              >
-                {numberOfLikes + (isLiked ? 1 : 0)}
-              </p>
-              <Heart className={isLiked ? "text-pink-600" : ""} />
-            </Button>
+            </Link>
+            <div
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+              title={postedAt.toLocaleString()}
+            >
+              <Clock3 className="h-3.5 w-3.5" />
+              <span>{postedAtLabel}</span>
+            </div>
           </div>
-        </div>
 
-        {/* content */}
-        <div className="flex flex-col gap-4 my-2 w-full min-w-0">
-          {post.attachment_url && (
-            <Image
-              className="rounded-xl object-cover w-full max-h-[600px]"
-              src={
-                supabase.storage
-                  .from("images")
-                  .getPublicUrl(post.attachment_url).data.publicUrl
-              }
-              alt="Attachment"
-              width={600}
-              height={600}
-            />
-          )}
-          <p className="whitespace-pre-wrap break-words break-all">
+          <p className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/95 sm:text-[15.5px]">
             {post.content}
           </p>
+
+          {postImageUrl && (
+            <div className="mt-3 overflow-hidden rounded-2xl border border-border/70 bg-muted/30">
+              <Image
+                className="max-h-[620px] w-full object-cover transition-transform duration-300 group-hover:scale-[1.015]"
+                src={postImageUrl}
+                alt="Attachment"
+                width={900}
+                height={900}
+              />
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center justify-between border-t border-border/70 pt-3">
+            <Button
+              variant="ghost"
+              className={`h-9 rounded-full px-3.5 ${
+                isLiked
+                  ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 hover:text-rose-500"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={handleLike}
+            >
+              <Heart
+                className={
+                  isLiked ? "fill-rose-500 text-rose-500" : "text-inherit"
+                }
+              />
+              <span className="text-sm font-semibold">
+                {likeCount.toLocaleString()}
+              </span>
+            </Button>
+
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+              Open post
+              <ArrowUpRight className="h-4 w-4" />
+            </span>
+          </div>
         </div>
       </div>
     </div>

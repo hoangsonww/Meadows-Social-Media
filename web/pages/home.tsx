@@ -1,7 +1,6 @@
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { InView } from "react-intersection-observer";
 import PostCard from "@/components/post";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +21,7 @@ import {
   getFeed,
   getFollowingFeed,
   getLikesFeed,
+  getMyPosts,
 } from "@/utils/supabase/queries/post";
 import { getProfileData } from "@/utils/supabase/queries/profile";
 import { User } from "@supabase/supabase-js";
@@ -32,10 +32,12 @@ import {
   ImagePlus,
   RotateCcw,
   Send,
+  Sparkles,
   X,
   Loader2,
 } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
+import Image from "next/image";
 import { z } from "zod";
 import { Toaster, toast } from "sonner";
 
@@ -43,9 +45,54 @@ enum HomePageTab {
   FEED = "Feed",
   FOLLOWING = "Following",
   LIKED = "Liked",
+  MINE = "Mine",
 }
 
 type HomePageProps = { user: User; profile: z.infer<typeof PostAuthor> };
+
+function useRotatingTypewriter(
+  lines: string[],
+  typingSpeed = 70,
+  deletingSpeed = 42,
+  pauseMs = 1400,
+) {
+  const [lineIndex, setLineIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    if (lines.length === 0) return;
+
+    const fullText = lines[lineIndex];
+    const reachedEnd = text === fullText;
+    const reachedStart = text.length === 0;
+    let timeoutMs = isDeleting ? deletingSpeed : typingSpeed;
+
+    if (!isDeleting && reachedEnd) {
+      timeoutMs = pauseMs;
+    }
+
+    const timer = setTimeout(() => {
+      if (!isDeleting && reachedEnd) {
+        setIsDeleting(true);
+        return;
+      }
+
+      if (isDeleting && reachedStart) {
+        setIsDeleting(false);
+        setLineIndex((prev) => (prev + 1) % lines.length);
+        return;
+      }
+
+      const nextLength = text.length + (isDeleting ? -1 : 1);
+      setText(fullText.slice(0, nextLength));
+    }, timeoutMs);
+
+    return () => clearTimeout(timer);
+  }, [text, isDeleting, lineIndex, lines, typingSpeed, deletingSpeed, pauseMs]);
+
+  return text;
+}
 
 /**
  * HomePage component renders the post creation UI and inline infinite-scrolling posts,
@@ -59,6 +106,9 @@ export default function HomePage({ user, profile }: HomePageProps) {
   const [expandPostDraft, setExpandPostDraft] = useState<boolean>(true);
   const [postDraftText, setPostDraftText] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(
+    null,
+  );
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -67,13 +117,26 @@ export default function HomePage({ user, profile }: HomePageProps) {
     if (!key) return undefined;
     return supabase.storage.from("avatars").getPublicUrl(key).data.publicUrl;
   }, [profile?.avatar_url, supabase]);
+  const firstName = profile?.name?.split(" ")[0] ?? "there";
+  const rotatingHeadlines = useMemo(
+    () => [
+      "create your next moment.",
+      "drop a take your crew feels.",
+      "share a win that hits different.",
+      "post something worth the scroll.",
+    ],
+    [],
+  );
+  const typedHeadline = useRotatingTypewriter(rotatingHeadlines);
 
   const fetchDataFn =
     activeTab === HomePageTab.FEED
       ? getFeed
       : activeTab === HomePageTab.FOLLOWING
         ? getFollowingFeed
-        : getLikesFeed;
+        : activeTab === HomePageTab.LIKED
+          ? getLikesFeed
+          : getMyPosts;
 
   const {
     data: posts,
@@ -96,6 +159,18 @@ export default function HomePage({ user, profile }: HomePageProps) {
     // more targeted than resetQueries()
     queryClient.invalidateQueries({ queryKey: ["posts"] });
 
+  useEffect(() => {
+    if (!selectedFile) {
+      setSelectedFilePreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setSelectedFilePreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
+
   const publishPost = async () => {
     if (!postDraftText.trim()) return;
     setIsPosting(true);
@@ -115,22 +190,49 @@ export default function HomePage({ user, profile }: HomePageProps) {
   return (
     <>
       <Toaster position="bottom-center" theme="system" richColors />
-      <main className="flex min-h-screen min-h-[100svh] min-h-dvh w-full items-start justify-center bg-background text-foreground">
-        <div className="w-full max-w-3xl px-4 sm:px-6 py-4 sm:py-6">
-          {/* Post draft card */}
-          <Card className="rounded-3xl transition-all ease-in-out duration-300 hover:shadow-md mt-2 border-border bg-card text-card-foreground">
-            <CardHeader className="py-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="transition-colors ease-in-out duration-300">
-                  Write a Post
-                </CardTitle>
+      <main className="min-h-screen w-full text-foreground">
+        <div className="page-shell max-w-4xl">
+          <section className="surface mb-5 animate-fade-up p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+                  Your Live Social Feed
+                </p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight">
+                  Hey {firstName},{" "}
+                  <span className="gradient-text">{typedHeadline}</span>
+                  <span
+                    aria-hidden="true"
+                    className="ml-0.5 inline-block text-primary/85 animate-pulse"
+                  >
+                    |
+                  </span>
+                </h1>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Share ideas, drop updates, and keep your crew in the loop.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Curated for you
+              </div>
+            </div>
+          </section>
+
+          <Card
+            id="create-post-section"
+            className="animate-fade-up scroll-mt-24 border-border/70 bg-card/85"
+          >
+            <CardHeader className="pb-3 pt-4">
+              <div className="flex items-center justify-between gap-3">
+                <CardTitle className="text-xl">Create Post</CardTitle>
                 {expandPostDraft ? (
                   <Button
                     variant="ghost"
                     size="icon"
                     aria-label="Collapse composer"
                     aria-expanded={expandPostDraft}
-                    className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                    className="rounded-full"
                     onClick={() => setExpandPostDraft(false)}
                   >
                     <ChevronsUp />
@@ -141,7 +243,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     size="icon"
                     aria-label="Expand composer"
                     aria-expanded={expandPostDraft}
-                    className="transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                    className="rounded-full"
                     onClick={() => setExpandPostDraft(true)}
                   >
                     <ChevronsDown />
@@ -153,8 +255,8 @@ export default function HomePage({ user, profile }: HomePageProps) {
             {expandPostDraft && (
               <>
                 <CardContent className="space-y-2 pb-3">
-                  <div className="flex flex-col sm:flex-row gap-3 w-full">
-                    <Avatar className="mt-1 flex-shrink-0 rounded-full">
+                  <div className="flex w-full flex-col gap-3 sm:flex-row">
+                    <Avatar className="mt-1 flex-shrink-0">
                       <AvatarImage
                         src={avatarUrl}
                         alt={profile?.name ?? "User"}
@@ -167,37 +269,56 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     <Textarea
                       value={postDraftText}
                       onChange={(e) => setPostDraftText(e.target.value)}
-                      className="
-                        flex-1 h-28 rounded-2xl
-                        bg-background text-foreground placeholder:text-foreground/60
-                        focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                        focus-visible:ring-offset-background
-                      "
+                      className="h-28 flex-1"
                       placeholder="What's on your mind? Share your thoughts, ideas, or experiences with the world!"
                     />
                   </div>
+
+                  {selectedFilePreview && (
+                    <div className="pl-0 sm:pl-14">
+                      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-muted/30">
+                        <Image
+                          src={selectedFilePreview}
+                          alt="Selected image preview"
+                          width={1200}
+                          height={1200}
+                          unoptimized
+                          className="max-h-[360px] w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remove selected image"
+                          className="absolute right-2 top-2 rounded-full bg-background/85 p-1.5 text-foreground shadow"
+                          onClick={() => setSelectedFile(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
 
                 <CardFooter className="pb-3">
-                  <div className="flex flex-wrap gap-3 justify-end w-full">
+                  <div className="flex w-full flex-wrap justify-end gap-3">
                     <Input
                       className="hidden"
                       type="file"
                       ref={fileInputRef}
                       accept="image/*"
-                      onChange={(e) =>
-                        setSelectedFile(e.target.files?.[0] ?? null)
-                      }
+                      onChange={(e) => {
+                        setSelectedFile(e.target.files?.[0] ?? null);
+                        e.currentTarget.value = "";
+                      }}
                     />
 
                     {selectedFile ? (
                       <Button
                         type="button"
                         variant="secondary"
-                        className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                        className="rounded-full"
                         onClick={() => setSelectedFile(null)}
                       >
-                        <ImagePlus className="mr-2" />
+                        <ImagePlus />
                         <span className="text-sm max-w-xs truncate">
                           {selectedFile.name}
                         </span>
@@ -208,7 +329,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                         type="button"
                         variant="secondary"
                         size="icon"
-                        className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                        className="rounded-full"
                         onClick={() => fileInputRef.current?.click()}
                         aria-label="Attach image"
                       >
@@ -217,7 +338,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     )}
 
                     <Button
-                      className="rounded-3xl transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                      className="rounded-full px-6"
                       onClick={publishPost}
                       disabled={!postDraftText.trim() || isPosting}
                       aria-busy={isPosting}
@@ -229,7 +350,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
                         </span>
                       ) : (
                         <>
-                          <Send className="mr-2" /> Post
+                          <Send /> Post
                         </>
                       )}
                     </Button>
@@ -239,55 +360,25 @@ export default function HomePage({ user, profile }: HomePageProps) {
             )}
           </Card>
 
-          {/* Tabs */}
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
-            className="w-full mt-6"
+            className="mt-6 w-full animate-fade-up"
           >
-            <div className="flex items-center justify-between gap-2">
-              <TabsList
-                className="
-                  grid grid-cols-3 flex-1 rounded-lg border border-border
-                  bg-muted/30 backdrop-blur supports-[backdrop-filter]:bg-muted/25
-                "
-              >
-                <TabsTrigger
-                  value={HomePageTab.FEED}
-                  className="
-                    transition-colors duration-200
-                    data-[state=active]:bg-card data-[state=active]:text-foreground
-                    data-[state=active]:shadow-sm
-                  "
-                >
-                  Feed
-                </TabsTrigger>
-                <TabsTrigger
-                  value={HomePageTab.FOLLOWING}
-                  className="
-                    transition-colors duration-200
-                    data-[state=active]:bg-card data-[state=active]:text-foreground
-                    data-[state=active]:shadow-sm
-                  "
-                >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:grid-cols-4">
+                <TabsTrigger value={HomePageTab.FEED}>Feed</TabsTrigger>
+                <TabsTrigger value={HomePageTab.FOLLOWING}>
                   Following
                 </TabsTrigger>
-                <TabsTrigger
-                  value={HomePageTab.LIKED}
-                  className="
-                    transition-colors duration-200
-                    data-[state=active]:bg-card data-[state=active]:text-foreground
-                    data-[state=active]:shadow-sm
-                  "
-                >
-                  Liked
-                </TabsTrigger>
+                <TabsTrigger value={HomePageTab.LIKED}>Liked</TabsTrigger>
+                <TabsTrigger value={HomePageTab.MINE}>Mine</TabsTrigger>
               </TabsList>
 
               <Button
                 variant="secondary"
                 size="icon"
-                className="rounded-full transition-transform ease-in-out duration-300 hover:scale-[1.02]"
+                className="self-end rounded-full sm:self-auto"
                 onClick={refresh}
                 aria-label="Refresh feed"
               >
@@ -296,21 +387,27 @@ export default function HomePage({ user, profile }: HomePageProps) {
             </div>
           </Tabs>
 
-          {/* Posts list */}
-          <div className="mt-4 space-y-6 w-full">
+          <div className="mt-4 w-full space-y-4">
             {isInitialLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="animate-spin h-8 w-8 text-foreground/70" />
               </div>
+            ) : posts &&
+              posts.pages.reduce((total, page) => total + page.length, 0) ===
+                0 ? (
+              <Card className="rounded-3xl p-8 text-center">
+                <p className="text-lg font-semibold">No posts yet</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Start the conversation by posting something first.
+                </p>
+              </Card>
             ) : (
               posts?.pages.map((page, pi) =>
                 page.map((post, idx) => (
                   <Fragment key={post.id}>
-                    <div className="w-full rounded-3xl transition-all ease-in-out duration-300 hover:shadow-lg">
+                    <div className="w-full animate-fade-up">
                       <PostCard user={user} post={post} />
                     </div>
-
-                    <Separator className="bg-border" />
 
                     {pi === posts.pages.length - 1 &&
                       idx === page.length - 1 &&
