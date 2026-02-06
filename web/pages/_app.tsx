@@ -9,6 +9,7 @@ import type { AppProps } from "next/app";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
 import BackToTopButton from "@/components/BackToTopButton";
+import Footer from "@/components/footer";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ function MetaUpdater() {
       // use resolvedTheme to pick up system/light/dark changes immediately
       meta.setAttribute(
         "content",
-        resolvedTheme === "dark" ? "#000000" : "#ffffff",
+        resolvedTheme === "dark" ? "#0b1628" : "#f1f9ff",
       );
     }
   }, [resolvedTheme]);
@@ -125,9 +126,10 @@ export default function App({ Component, pageProps }: AppProps) {
           {/* only show on non-landing pages */}
           {!isLanding && <Header />}
 
-          <main className="flex-1 overflow-y-auto">
+          <main className="relative flex-1 overflow-y-auto">
             <Component {...pageProps} />
           </main>
+          {!isLanding && <Footer />}
         </div>
         <BackToTopButton />
       </ThemeProvider>

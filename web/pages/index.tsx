@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Head from "next/head";
 import { motion } from "framer-motion";
-import { Manrope, Space_Grotesk } from "next/font/google";
+import { GetServerSidePropsContext } from "next";
 import {
   Activity,
   BadgeCheck,
@@ -34,20 +34,10 @@ import {
   Smartphone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
 
 /* dynamic import for client-only count-up */
 const CountUp = dynamic(() => import("react-countup"), { ssr: false });
-
-const displayFont = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  variable: "--font-display",
-});
-const bodyFont = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-body",
-});
 
 /* -------------------------------------------------------------------------- */
 /*                                 Typewriter                                 */
@@ -635,7 +625,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 /*                                Main Page                                   */
 /* -------------------------------------------------------------------------- */
 
-export default function Landing() {
+type LandingProps = {
+  isAuthenticated: boolean;
+};
+
+export default function Landing({ isAuthenticated }: LandingProps) {
   const typedLine = useTypewriter(heroLines);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -662,10 +656,12 @@ export default function Landing() {
           scroll-behavior: smooth;
         }
         .landing-root {
-          font-family: var(--font-body);
+          font-family:
+            var(--font-body), "Plus Jakarta Sans", ui-sans-serif, system-ui;
         }
         .landing-root .font-display {
-          font-family: var(--font-display);
+          font-family:
+            var(--font-display), "Space Grotesk", ui-sans-serif, system-ui;
           letter-spacing: -0.02em;
         }
         @keyframes blink {
@@ -688,9 +684,7 @@ export default function Landing() {
         }
       `}</style>
 
-      <div
-        className={`${displayFont.variable} ${bodyFont.variable} landing-root`}
-      >
+      <div className="landing-root">
         {/* ------------------------------ Hero ------------------------------- */}
         <header className="relative flex flex-col items-center justify-center min-h-[100svh] md:min-h-dvh bg-neutral-950 text-white overflow-hidden px-4 pt-20 pb-16 text-center">
           <div className="absolute -z-10 inset-0 bg-gradient-to-br from-emerald-600/40 to-purple-700/40 blur-3xl opacity-30" />
@@ -743,10 +737,17 @@ export default function Landing() {
               <Users className="size-5" />
               Join Meadows
             </Btn>
-            <Btn href="/login" outline>
-              <Send className="size-5" />
-              Log In
-            </Btn>
+            {isAuthenticated ? (
+              <Btn href="/home" outline>
+                <Sparkles className="size-5" />
+                Home Feed
+              </Btn>
+            ) : (
+              <Btn href="/login" outline>
+                <Send className="size-5" />
+                Log In
+              </Btn>
+            )}
           </motion.div>
           <motion.div
             variants={revealVariants}
@@ -1068,4 +1069,15 @@ export default function Landing() {
       </div>
     </>
   );
+}
+
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const supabase = createSupabaseServerClient(context);
+  const { data, error } = await supabase.auth.getUser();
+
+  return {
+    props: {
+      isAuthenticated: Boolean(data?.user) && !error,
+    },
+  };
 }

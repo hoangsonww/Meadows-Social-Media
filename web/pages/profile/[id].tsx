@@ -59,20 +59,20 @@ function Modal({
 }: ModalProps) {
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-md max-h-[95vh] overflow-y-auto rounded-xl bg-background text-foreground shadow-xl p-4 border border-border">
+      <div className="relative z-50 max-h-[95vh] w-full max-w-md overflow-y-auto rounded-3xl border border-border/70 bg-card/95 p-5 text-foreground shadow-soft-xl backdrop-blur">
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-4 right-4 rounded-full p-1 transition hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="absolute right-4 top-4 rounded-full p-1 transition hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <X className="h-5 w-5 text-muted-foreground" />
         </button>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">{title}</h2>
+        <h2 className="mb-4 text-xl font-bold text-foreground">{title}</h2>
         {isEmpty ? (
           <p className="text-center text-muted-foreground">{emptyMessage}</p>
         ) : (
@@ -98,6 +98,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
   const profileId = router.query.id as string;
+  const isProfileReady = typeof profileId === "string" && profileId.length > 0;
 
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
@@ -106,26 +107,28 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   const { data: profile } = useQuery({
     queryKey: ["profile", profileId],
     queryFn: () => getProfileData(supabase, user, profileId),
+    enabled: isProfileReady,
   });
 
   // load followers/following counts
   const { data: followers } = useQuery({
     queryKey: ["profile_followers", profileId],
     queryFn: () => getProfileFollowers(supabase, profileId),
-    enabled: !!profileId,
+    enabled: isProfileReady,
   });
   const { data: following } = useQuery({
     queryKey: ["profile_following", profileId],
     queryFn: () => getProfileFollowing(supabase, profileId),
-    enabled: !!profileId,
+    enabled: isProfileReady,
   });
 
   // determine if current user follows this profile
   useEffect(() => {
+    if (!isProfileReady) return;
     getFollowing(supabase, user).then((list) =>
       setIsFollowing(list.some((f) => f.id === profileId)),
     );
-  }, [supabase, user, profileId]);
+  }, [supabase, user, profileId, isProfileReady]);
 
   // infinite posts
   const {
@@ -139,18 +142,19 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
       getProfilePosts(supabase, user, profileId, pageParam),
     getNextPageParam: (lastPage, pages) =>
       lastPage.length < 25 ? undefined : pages.length * lastPage.length,
+    enabled: isProfileReady,
   });
 
   // handle follow/unfollow with toast
   const followButtonPressed = async () => {
     await toggleFollowing(supabase, user, profileId);
     setIsFollowing((prev) => !prev);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    queryClient.invalidateQueries(["profile_followers", profileId]);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    queryClient.invalidateQueries(["profile_following", profileId]);
+    queryClient.invalidateQueries({
+      queryKey: ["profile_followers", profileId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["profile_following", profileId],
+    });
     toast.success(isFollowing ? "Unfollowed user" : "Followed user");
   };
 
@@ -166,15 +170,20 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
   }, [selectedFile, supabase, user, queryClient]);
 
   const isPersonalPage = user.id === profileId;
+  const postsTitle = isPersonalPage
+    ? "Your Recent Posts"
+    : profile
+      ? `${profile.name}'s Recent Posts`
+      : "Recent Posts";
 
   return (
     <>
       <Toaster position="bottom-center" theme="system" richColors />
-      <div className="min-h-screen w-full space-y-6 bg-background text-foreground p-4">
-        <div className="mb-4 flex items-center">
+      <div className="page-shell max-w-5xl space-y-6">
+        <div className="mb-1 flex items-center">
           <Button
             variant="ghost"
-            className="transition-transform duration-200 hover:scale-105"
+            className="rounded-full px-4"
             onClick={() => router.push("/home")}
           >
             <ArrowLeft /> Back to Feed
@@ -182,11 +191,12 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         </div>
 
         {profile && (
-          <Card className="w-full rounded-xl transition-shadow duration-200 hover:shadow-lg bg-card text-card-foreground border border-border">
-            <CardContent className="space-y-4 py-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+          <Card className="w-full overflow-hidden border-border/70 bg-card/85">
+            <div className="h-24 w-full bg-gradient-to-r from-primary/25 via-transparent to-accent/25" />
+            <CardContent className="space-y-5 py-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <Avatar className="transition-transform duration-200 hover:scale-105">
+                  <Avatar className="h-16 w-16 transition-transform duration-200 hover:scale-105">
                     <AvatarImage
                       src={
                         supabase.storage
@@ -199,15 +209,19 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-bold text-foreground">{profile.name}</p>
-                    <p className="text-muted-foreground">@{profile.handle}</p>
+                    <p className="text-2xl font-bold tracking-tight text-foreground">
+                      {profile.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      @{profile.handle}
+                    </p>
                   </div>
                 </div>
 
                 {!isPersonalPage && isFollowing !== undefined && (
                   <Button
                     variant={isFollowing ? "secondary" : "default"}
-                    className="transition-opacity duration-200 hover:opacity-80"
+                    className="rounded-full"
                     onClick={followButtonPressed}
                   >
                     {isFollowing ? <BellOff /> : <Bell />}{" "}
@@ -221,7 +235,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                       <Button
                         variant="secondary"
                         size="icon"
-                        className="transition-opacity duration-200 hover:opacity-80"
+                        className="rounded-full"
                         onClick={() =>
                           updateProfilePicture(supabase, user, null).then(() =>
                             queryClient.resetQueries(),
@@ -242,7 +256,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                           }
                         />
                         <Button
-                          className="transition-opacity duration-200 hover:opacity-80"
+                          className="rounded-full"
                           onClick={() => fileInputRef.current?.click()}
                         >
                           <ImageUp /> Change Avatar
@@ -253,7 +267,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                 )}
               </div>
 
-              <div className="mt-6 flex flex-wrap justify-between gap-4">
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {[
                   {
                     label: "Posts",
@@ -277,7 +291,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   <div
                     key={label}
                     onClick={onClick}
-                    className="flex cursor-pointer flex-col items-center transition-transform duration-200 hover:scale-105"
+                    className="flex cursor-pointer flex-col items-center rounded-2xl border border-border/70 bg-card/70 px-4 py-3 transition-transform duration-200 hover:-translate-y-0.5"
                   >
                     <span className="text-2xl font-bold text-foreground">
                       {count}
@@ -293,15 +307,17 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
         )}
 
         <ScrollArea
-          className="h-auto w-full rounded-xl transition-shadow duration-200 hover:shadow-lg bg-card text-card-foreground border border-border"
+          className="h-auto w-full rounded-3xl border border-border/70 bg-card/80 text-card-foreground shadow-soft-xl"
           ref={postFeedRef}
         >
-          <div className="px-2 py-4">
-            <p className="mb-2 text-lg font-bold text-foreground">
-              {isPersonalPage ? "Your" : `${profile?.name}'s`} Recent Posts
+          <div className="px-3 py-4">
+            <p className="mb-3 text-xl font-bold text-foreground">
+              {postsTitle}
             </p>
-            <Separator />
-            <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
+            <Separator className="bg-border/70" />
+            <div className="mt-4">
+              <PostFeed user={user} posts={posts} fetchNext={fetchNextPage} />
+            </div>
             {isFetchingNextPage && (
               <div className="py-4 flex justify-center">
                 <Loader2 className="animate-spin h-6 w-6 text-foreground/70" />
@@ -321,7 +337,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
             {followers?.map((f) => (
               <div
                 key={f.id}
-                className="group flex cursor-pointer items-center gap-3 py-2"
+                className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border/70 bg-card/70 px-3 py-2"
                 onClick={() => {
                   setFollowersModalOpen(false);
                   router.push(`/profile/${f.id}`);
@@ -340,7 +356,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold group-hover:underline text-foreground">
+                  <p className="font-bold text-foreground group-hover:underline">
                     {f.name}
                   </p>
                   <p className="text-sm text-muted-foreground group-hover:underline">
@@ -363,7 +379,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
             {following?.map((f) => (
               <div
                 key={f.id}
-                className="group flex cursor-pointer items-center gap-3 py-2"
+                className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-border/70 bg-card/70 px-3 py-2"
                 onClick={() => {
                   setFollowingModalOpen(false);
                   router.push(`/profile/${f.id}`);
@@ -382,7 +398,7 @@ export default function PublicProfilePage({ user }: PublicProfilePageProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-bold group-hover:underline text-foreground">
+                  <p className="font-bold text-foreground group-hover:underline">
                     {f.name}
                   </p>
                   <p className="text-sm text-muted-foreground group-hover:underline">

@@ -92,11 +92,11 @@ export default class MyDocument extends Document {
             crossOrigin="anonymous"
           />
           <link
-            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
             rel="stylesheet"
           />
         </Head>
-        <body className="antialiased bg-white text-gray-900">
+        <body className="antialiased">
           <Main />
           <NextScript />
         </body>

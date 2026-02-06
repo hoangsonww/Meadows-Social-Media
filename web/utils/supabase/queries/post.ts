@@ -259,6 +259,53 @@ export const getLikesFeed = async (
 };
 
 /**
+ * This function loads data for the user's own posts.
+ *
+ * @param supabase - Supabase client to use.
+ * @param user - Active user making the request.
+ * @param cursor - The starting index of the page.
+ * @returns - Post objects authored by the current user.
+ */
+export const getMyPosts = async (
+  supabase: SupabaseClient,
+  user: User,
+  cursor: number,
+): Promise<z.infer<typeof Post>[]> => {
+  const { data, error } = await supabase
+    .from("post")
+    .select(
+      `
+      id,
+      content,
+      posted_at,
+      attachment_url,
+      author:author_id (
+        id,
+        name,
+        handle,
+        avatar_url
+      ),
+      likes:like (
+        profile_id
+      )
+    `,
+    )
+    .eq("author_id", user.id)
+    .order("posted_at", { ascending: false })
+    .range(cursor, cursor + 24);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  return Post.array().parse(data);
+};
+
+/**
  * This function toggles the like status of a post for a user.
  *
  * @param supabase - Supabase client to use.

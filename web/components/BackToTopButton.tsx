@@ -17,16 +17,13 @@ export default function BackToTopButton() {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label="Back to top"
       className="
-        fixed bottom-4 right-4 z-50
-        w-10 h-10
-        flex items-center justify-center
-        bg-black text-white
-        dark:bg-white dark:text-black
-        rounded-lg shadow-lg
-        hover:scale-105 transition-transform
+        fixed bottom-5 right-5 z-50
+        flex h-11 w-11 items-center justify-center
+        rounded-full border border-border/70 bg-card/85 text-foreground shadow-soft-xl backdrop-blur
+        transition-transform duration-200 hover:-translate-y-1
       "
     >
-      <ArrowUp className="h-6 w-6" />
+      <ArrowUp className="h-5 w-5" />
     </button>
   );
 }

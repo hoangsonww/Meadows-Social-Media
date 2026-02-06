@@ -4,7 +4,6 @@ import { z } from "zod";
 import { Post } from "@/utils/supabase/models/post";
 import { InfiniteData } from "@tanstack/react-query";
 import PostCard from "./post";
-import { Separator } from "./ui/separator";
 import { User } from "@supabase/supabase-js";
 
 type PostFeedProps = {
@@ -22,8 +21,9 @@ export default function PostFeed({ user, posts, fetchNext }: PostFeedProps) {
               {postIndex === 20 && (
                 <InView onChange={(inView) => inView && fetchNext()}></InView>
               )}
-              <PostCard user={user} post={post} />
-              <Separator />
+              <div className="mb-4">
+                <PostCard user={user} post={post} />
+              </div>
             </Fragment>
           ));
         })}
