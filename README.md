@@ -34,8 +34,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white" alt="Markdown" />
 </p>
 
-> [!IMPORTANT]
-> **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
+> [!IMPORTANT] > **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
 >
 > Please give it a try and start sharing your thoughts stylishly!
 
@@ -66,6 +65,7 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="img/landing.png" alt="Landing Page" width="100%" />
   <img src="img/home.png" alt="Home Feed" width="100%" />
   <img src="img/post.png" alt="Post Page" width="100%" />
+  <img src="img/post-1.png" alt="Post Page with Poll" width="100%" />
   <img src="img/profile.png" alt="Profile Page" width="100%" />
   <img src="img/signup.png" alt="Sign Up Page" width="100%" />
   <img src="img/login.png" alt="Login Page" width="100%" />
