@@ -13,6 +13,8 @@ const {
   getFollowingFeed,
   getLikesFeed,
   toggleLike,
+  setPostVibe,
+  voteOnPostPoll,
   createPost,
   // eslint-disable-next-line @typescript-eslint/no-require-imports
 } = require("../utils/supabase/queries/post");
@@ -36,6 +38,9 @@ describe("Supabase query helpers", () => {
     attachment_url: null,
     author: { id: "a", name: "n", handle: "h", avatar_url: null },
     likes: [{ profile_id: "l" }],
+    vibes: [{ profile_id: "l", vibe: "real" }],
+    attachments: [],
+    poll: null,
   };
   const user = { id: "u" };
 
@@ -147,6 +152,67 @@ describe("Supabase query helpers", () => {
     await expect(toggleLike(supabase, user, "pid")).resolves.toBeUndefined();
   });
 
+  test("setPostVibe -> inserts when no reaction exists", async () => {
+    const supabase = {
+      from: jest
+        .fn()
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                maybeSingle: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+        }),
+    };
+
+    await expect(
+      setPostVibe(supabase, user, "pid", "real"),
+    ).resolves.toBeUndefined();
+  });
+
+  test("voteOnPostPoll -> validates option and upserts vote", async () => {
+    const supabase = {
+      from: jest
+        .fn()
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                maybeSingle: jest
+                  .fn()
+                  .mockResolvedValue({ data: { id: "o1" }, error: null }),
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                maybeSingle: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
+              }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          upsert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+        }),
+    };
+
+    await expect(
+      voteOnPostPoll(supabase, user, "pid", "o1"),
+    ).resolves.toBeUndefined();
+  });
+
   test("createPost → inserts and uploads if file provided", async () => {
     const supabase = {
       from: jest
@@ -161,7 +227,11 @@ describe("Supabase query helpers", () => {
             }),
           }),
         })
-        // 2nd call: update attachment_url
+        // 2nd call: insert attachment rows
+        .mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+        })
+        // 3rd call: update attachment_url
         .mockReturnValueOnce({
           update: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
@@ -177,6 +247,36 @@ describe("Supabase query helpers", () => {
     };
     await expect(
       createPost(supabase, user, "hey", {}),
+    ).resolves.toBeUndefined();
+  });
+
+  test("createPost -> inserts poll rows when poll payload exists", async () => {
+    const supabase = {
+      from: jest
+        .fn()
+        .mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue({
+            select: jest.fn().mockReturnValue({
+              single: jest
+                .fn()
+                .mockResolvedValue({ data: { id: "p2" }, error: null }),
+            }),
+          }),
+        })
+        .mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+        })
+        .mockReturnValueOnce({
+          insert: jest.fn().mockReturnValue(Promise.resolve({ error: null })),
+        }),
+      storage: { from: jest.fn() },
+    };
+
+    await expect(
+      createPost(supabase, user, "hey", null, {
+        question: "what now",
+        options: ["A", "B", "A"],
+      }),
     ).resolves.toBeUndefined();
   });
 

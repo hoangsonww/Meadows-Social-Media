@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { InView } from "react-intersection-observer";
 import PostCard from "@/components/post";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { TooltipHint } from "@/components/ui/tooltip-hint";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
 import { PostAuthor } from "@/utils/supabase/models/post";
@@ -27,14 +35,17 @@ import { getProfileData } from "@/utils/supabase/queries/profile";
 import { User } from "@supabase/supabase-js";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertCircle,
+  BarChart3,
   ChevronsDown,
   ChevronsUp,
   ImagePlus,
+  Loader2,
+  Plus,
   RotateCcw,
   Send,
   Sparkles,
   X,
-  Loader2,
 } from "lucide-react";
 import { GetServerSidePropsContext } from "next";
 import Image from "next/image";
@@ -49,6 +60,7 @@ enum HomePageTab {
 }
 
 type HomePageProps = { user: User; profile: z.infer<typeof PostAuthor> };
+const MAX_POST_IMAGES = 8;
 
 function useRotatingTypewriter(
   lines: string[],
@@ -94,10 +106,6 @@ function useRotatingTypewriter(
   return text;
 }
 
-/**
- * HomePage component renders the post creation UI and inline infinite-scrolling posts,
- * with smooth hover effects, animations, full-width layout, and enhanced border radius.
- */
 export default function HomePage({ user, profile }: HomePageProps) {
   const queryClient = useQueryClient();
   const supabase = createSupabaseComponentClient();
@@ -105,10 +113,13 @@ export default function HomePage({ user, profile }: HomePageProps) {
   const [activeTab, setActiveTab] = useState<string>(HomePageTab.FEED);
   const [expandPostDraft, setExpandPostDraft] = useState<boolean>(true);
   const [postDraftText, setPostDraftText] = useState<string>("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(
-    null,
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFilePreviews, setSelectedFilePreviews] = useState<string[]>(
+    [],
   );
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [isPosting, setIsPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -117,6 +128,7 @@ export default function HomePage({ user, profile }: HomePageProps) {
     if (!key) return undefined;
     return supabase.storage.from("avatars").getPublicUrl(key).data.publicUrl;
   }, [profile?.avatar_url, supabase]);
+
   const firstName = profile?.name?.split(" ")[0] ?? "there";
   const rotatingHeadlines = useMemo(
     () => [
@@ -128,6 +140,70 @@ export default function HomePage({ user, profile }: HomePageProps) {
     [],
   );
   const typedHeadline = useRotatingTypewriter(rotatingHeadlines);
+
+  const normalizedPollOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          pollOptions
+            .map((option) => option.trim())
+            .filter((option) => option.length > 0),
+        ),
+      ).slice(0, 4),
+    [pollOptions],
+  );
+  const nonEmptyPollOptionCount = useMemo(
+    () => pollOptions.filter((option) => option.trim().length > 0).length,
+    [pollOptions],
+  );
+  const duplicatePollOptionCount = useMemo(
+    () => Math.max(nonEmptyPollOptionCount - normalizedPollOptions.length, 0),
+    [nonEmptyPollOptionCount, normalizedPollOptions.length],
+  );
+  const pollOptionsNeeded = useMemo(
+    () => Math.max(0, 2 - normalizedPollOptions.length),
+    [normalizedPollOptions.length],
+  );
+
+  const hasValidPoll = useMemo(
+    () => !pollEnabled || normalizedPollOptions.length >= 2,
+    [pollEnabled, normalizedPollOptions],
+  );
+  const pollStatusText = useMemo(() => {
+    if (!pollEnabled) return null;
+    if (normalizedPollOptions.length >= 2) {
+      if (duplicatePollOptionCount > 0) {
+        return `${normalizedPollOptions.length}/4 unique options ready. Duplicates count once.`;
+      }
+      return `${normalizedPollOptions.length}/4 unique options ready.`;
+    }
+    return `Add ${pollOptionsNeeded} more unique option${pollOptionsNeeded > 1 ? "s" : ""} to enable Post.`;
+  }, [
+    pollEnabled,
+    normalizedPollOptions.length,
+    duplicatePollOptionCount,
+    pollOptionsNeeded,
+  ]);
+  const postDisabledReason = useMemo<string | null>(() => {
+    if (isPosting) return "Posting in progress...";
+    if (!postDraftText.trim()) return "Add a caption to unlock Post.";
+    if (pollEnabled && !hasValidPoll) {
+      return pollStatusText ?? "Fix poll options to enable Post.";
+    }
+    return null;
+  }, [isPosting, postDraftText, pollEnabled, hasValidPoll, pollStatusText]);
+  const showCaptionHint = !isPosting && !postDraftText.trim();
+  const addImagesTooltip =
+    selectedFiles.length >= MAX_POST_IMAGES
+      ? `Maximum ${MAX_POST_IMAGES} images reached`
+      : selectedFiles.length > 0
+        ? `Add more images (${selectedFiles.length}/${MAX_POST_IMAGES})`
+        : "Add images to your post";
+  const addOptionTooltip =
+    pollOptions.length >= 4
+      ? "Maximum 4 poll options"
+      : "Add another poll option";
+  const postButtonTooltip = postDisabledReason ?? "Publish post";
 
   const fetchDataFn =
     activeTab === HomePageTab.FEED
@@ -155,29 +231,97 @@ export default function HomePage({ user, profile }: HomePageProps) {
     initialPageParam: 0,
   });
 
-  const refresh = () =>
-    // more targeted than resetQueries()
-    queryClient.invalidateQueries({ queryKey: ["posts"] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["posts"] });
 
   useEffect(() => {
-    if (!selectedFile) {
-      setSelectedFilePreview(null);
+    if (selectedFiles.length === 0) {
+      setSelectedFilePreviews([]);
       return;
     }
 
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setSelectedFilePreview(objectUrl);
+    const objectUrls = selectedFiles.map((file) => URL.createObjectURL(file));
+    setSelectedFilePreviews(objectUrls);
 
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [selectedFile]);
+    return () => {
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [selectedFiles]);
+
+  const addPollOption = () => {
+    setPollOptions((prev) => (prev.length >= 4 ? prev : [...prev, ""]));
+  };
+
+  const removePollOption = (index: number) => {
+    setPollOptions((prev) =>
+      prev.length <= 2 ? prev : prev.filter((_, i) => i !== index),
+    );
+  };
+
+  const updatePollOption = (index: number, value: string) => {
+    setPollOptions((prev) =>
+      prev.map((option, i) => (i === index ? value : option)),
+    );
+  };
+
+  const disablePollComposer = () => {
+    setPollEnabled(false);
+    setPollQuestion("");
+    setPollOptions(["", ""]);
+  };
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+  const handlePickImages = (event: ChangeEvent<HTMLInputElement>) => {
+    const pickedFiles = Array.from(event.target.files ?? []);
+    if (pickedFiles.length === 0) return;
+
+    const availableSlots = Math.max(0, MAX_POST_IMAGES - selectedFiles.length);
+    if (availableSlots === 0) {
+      toast(`You can upload up to ${MAX_POST_IMAGES} images per post.`);
+      event.currentTarget.value = "";
+      return;
+    }
+
+    setSelectedFiles((prev) => [
+      ...prev,
+      ...pickedFiles.slice(0, availableSlots),
+    ]);
+
+    if (pickedFiles.length > availableSlots) {
+      toast(`Only ${MAX_POST_IMAGES} images can be attached to one post.`);
+    }
+
+    event.currentTarget.value = "";
+  };
 
   const publishPost = async () => {
     if (!postDraftText.trim()) return;
+
+    if (pollEnabled && !hasValidPoll) {
+      toast.error("Add at least two poll options.");
+      return;
+    }
+
     setIsPosting(true);
+
     try {
-      await createPost(supabase, user, postDraftText, selectedFile);
+      await createPost(
+        supabase,
+        user,
+        postDraftText,
+        selectedFiles,
+        pollEnabled
+          ? {
+              question: pollQuestion.trim() || null,
+              options: normalizedPollOptions,
+            }
+          : null,
+      );
+
       setPostDraftText("");
-      setSelectedFile(null);
+      setSelectedFiles([]);
+      disablePollComposer();
       refresh();
       toast.success("Post published!");
     } catch {
@@ -227,34 +371,38 @@ export default function HomePage({ user, profile }: HomePageProps) {
               <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-xl">Create Post</CardTitle>
                 {expandPostDraft ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Collapse composer"
-                    aria-expanded={expandPostDraft}
-                    className="rounded-full"
-                    onClick={() => setExpandPostDraft(false)}
-                  >
-                    <ChevronsUp />
-                  </Button>
+                  <TooltipHint content="Collapse post composer">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Collapse composer"
+                      aria-expanded={expandPostDraft}
+                      className="rounded-full"
+                      onClick={() => setExpandPostDraft(false)}
+                    >
+                      <ChevronsUp />
+                    </Button>
+                  </TooltipHint>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Expand composer"
-                    aria-expanded={expandPostDraft}
-                    className="rounded-full"
-                    onClick={() => setExpandPostDraft(true)}
-                  >
-                    <ChevronsDown />
-                  </Button>
+                  <TooltipHint content="Expand post composer">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Expand composer"
+                      aria-expanded={expandPostDraft}
+                      className="rounded-full"
+                      onClick={() => setExpandPostDraft(true)}
+                    >
+                      <ChevronsDown />
+                    </Button>
+                  </TooltipHint>
                 )}
               </div>
             </CardHeader>
 
             {expandPostDraft && (
               <>
-                <CardContent className="space-y-2 pb-3">
+                <CardContent className="space-y-3 pb-3">
                   <div className="flex w-full flex-col gap-3 sm:flex-row">
                     <Avatar className="mt-1 flex-shrink-0">
                       <AvatarImage
@@ -274,25 +422,124 @@ export default function HomePage({ user, profile }: HomePageProps) {
                     />
                   </div>
 
-                  {selectedFilePreview && (
+                  {selectedFilePreviews.length > 0 && (
                     <div className="pl-0 sm:pl-14">
-                      <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-muted/30">
-                        <Image
-                          src={selectedFilePreview}
-                          alt="Selected image preview"
-                          width={1200}
-                          height={1200}
-                          unoptimized
-                          className="max-h-[360px] w-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Remove selected image"
-                          className="absolute right-2 top-2 rounded-full bg-background/85 p-1.5 text-foreground shadow"
-                          onClick={() => setSelectedFile(null)}
+                      <p className="mb-2 text-xs font-medium text-muted-foreground">
+                        {selectedFiles.length}/{MAX_POST_IMAGES} images selected
+                      </p>
+                      <div className="grid grid-cols-2 gap-2 overflow-hidden rounded-2xl border border-border/70 bg-muted/20 p-2 sm:grid-cols-3">
+                        {selectedFilePreviews.map((previewUrl, index) => (
+                          <div
+                            key={`${previewUrl}-${index}`}
+                            className="relative overflow-hidden rounded-xl"
+                          >
+                            <Image
+                              src={previewUrl}
+                              alt={`Selected image ${index + 1}`}
+                              width={900}
+                              height={900}
+                              unoptimized
+                              className="h-full w-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              aria-label={`Remove selected image ${index + 1}`}
+                              title={`Remove image ${index + 1}`}
+                              className="absolute right-2 top-2 rounded-full bg-background/85 p-1.5 text-foreground shadow"
+                              onClick={() => removeSelectedFile(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {pollEnabled && (
+                    <div className="rounded-2xl border border-border/70 bg-muted/20 p-3 sm:ml-14">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                          Quick Poll
+                        </p>
+                        <TooltipHint content="Remove poll from this post">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={disablePollComposer}
+                            aria-label="Remove poll"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </TooltipHint>
+                      </div>
+
+                      <Input
+                        value={pollQuestion}
+                        onChange={(e) => setPollQuestion(e.target.value)}
+                        placeholder="Question (optional)"
+                        className="mb-2"
+                        maxLength={120}
+                      />
+
+                      <div className="space-y-2">
+                        {pollOptions.map((option, index) => (
+                          <div
+                            key={`poll-option-${index}`}
+                            className="flex gap-2"
+                          >
+                            <Input
+                              value={option}
+                              onChange={(e) =>
+                                updatePollOption(index, e.target.value)
+                              }
+                              placeholder={`Option ${index + 1}`}
+                              maxLength={60}
+                            />
+                            {pollOptions.length > 2 && (
+                              <TooltipHint
+                                content={`Remove option ${index + 1}`}
+                              >
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  size="icon"
+                                  className="rounded-full"
+                                  onClick={() => removePollOption(index)}
+                                  aria-label={`Remove option ${index + 1}`}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </TooltipHint>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        <span
+                          className={`text-xs ${
+                            hasValidPoll
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-amber-700 dark:text-amber-300"
+                          }`}
                         >
-                          <X className="h-4 w-4" />
-                        </button>
+                          {pollStatusText}
+                        </span>
+                        <TooltipHint content={addOptionTooltip}>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={addPollOption}
+                            disabled={pollOptions.length >= 4}
+                          >
+                            <Plus className="h-4 w-4" /> Add option
+                          </Button>
+                        </TooltipHint>
                       </div>
                     </div>
                   )}
@@ -305,55 +552,94 @@ export default function HomePage({ user, profile }: HomePageProps) {
                       type="file"
                       ref={fileInputRef}
                       accept="image/*"
-                      onChange={(e) => {
-                        setSelectedFile(e.target.files?.[0] ?? null);
-                        e.currentTarget.value = "";
-                      }}
+                      multiple
+                      onChange={handlePickImages}
                     />
 
-                    {selectedFile ? (
+                    <TooltipHint content={addImagesTooltip}>
                       <Button
                         type="button"
                         variant="secondary"
                         className="rounded-full"
-                        onClick={() => setSelectedFile(null)}
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={selectedFiles.length >= MAX_POST_IMAGES}
                       >
                         <ImagePlus />
                         <span className="text-sm max-w-xs truncate">
-                          {selectedFile.name}
+                          {selectedFiles.length > 0
+                            ? `Add more (${selectedFiles.length}/${MAX_POST_IMAGES})`
+                            : "Add images"}
                         </span>
-                        <X className="ml-2" />
                       </Button>
-                    ) : (
+                    </TooltipHint>
+                    {selectedFiles.length > 0 && (
+                      <TooltipHint content="Remove all selected images">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="rounded-full"
+                          onClick={() => setSelectedFiles([])}
+                          aria-label="Remove all selected images"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipHint>
+                    )}
+
+                    <TooltipHint
+                      content={
+                        pollEnabled
+                          ? "Remove poll from this post"
+                          : "Add a quick poll to this post"
+                      }
+                    >
                       <Button
                         type="button"
                         variant="secondary"
-                        size="icon"
                         className="rounded-full"
-                        onClick={() => fileInputRef.current?.click()}
-                        aria-label="Attach image"
+                        onClick={() => {
+                          if (pollEnabled) {
+                            disablePollComposer();
+                          } else {
+                            setPollEnabled(true);
+                          }
+                        }}
                       >
-                        <ImagePlus />
+                        <BarChart3 />
+                        {pollEnabled ? "Remove poll" : "Add poll"}
                       </Button>
-                    )}
+                    </TooltipHint>
 
-                    <Button
-                      className="rounded-full px-6"
-                      onClick={publishPost}
-                      disabled={!postDraftText.trim() || isPosting}
-                      aria-busy={isPosting}
-                    >
-                      {isPosting ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="animate-spin h-5 w-5" />
-                          Posting…
-                        </span>
-                      ) : (
-                        <>
-                          <Send /> Post
-                        </>
-                      )}
-                    </Button>
+                    <TooltipHint content={postButtonTooltip}>
+                      <Button
+                        className="rounded-full px-6"
+                        onClick={publishPost}
+                        disabled={Boolean(postDisabledReason)}
+                        aria-busy={isPosting}
+                      >
+                        {isPosting ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Loader2 className="animate-spin h-5 w-5" />
+                            Posting...
+                          </span>
+                        ) : (
+                          <>
+                            <Send /> Post
+                          </>
+                        )}
+                      </Button>
+                    </TooltipHint>
+                    {postDisabledReason && (
+                      <div className="w-full">
+                        {showCaptionHint && (
+                          <p className="ml-auto inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            Add a caption to unlock Post
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardFooter>
               </>
@@ -434,9 +720,6 @@ export default function HomePage({ user, profile }: HomePageProps) {
   );
 }
 
-/**
- * getServerSideProps fetches user and profile before rendering.
- */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const supabase = createSupabaseServerClient(context);
   const { data: userData, error: userError } = await supabase.auth.getUser();

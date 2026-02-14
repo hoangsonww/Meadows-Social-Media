@@ -12,6 +12,9 @@ const fakePost = {
   author: { id: 'u2', name: 'Alice', handle: 'alice', avatar_url: null },
   content: 'Hello world',
   likes: [{ profile_id: 'u1' }, { profile_id: 'u3' }],
+  vibes: [{ profile_id: 'u1', vibe: 'real' }],
+  attachments: [],
+  poll: null,
   attachment_url: null,
 };
 

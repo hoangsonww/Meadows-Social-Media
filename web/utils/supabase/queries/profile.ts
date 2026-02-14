@@ -109,6 +109,10 @@ export const getProfilePosts = async (
       content,
       posted_at,
       attachment_url,
+      attachments:post_attachment (
+        path,
+        position
+      ),
       author:author_id (
         id,
         name,
@@ -117,6 +121,21 @@ export const getProfilePosts = async (
       ),
       likes:like (
         profile_id
+      ),
+      vibes:vibe_reaction (
+        profile_id,
+        vibe
+      ),
+      poll:post_poll (
+        question,
+        options:post_poll_option (
+          id,
+          label,
+          position,
+          votes:post_poll_vote (
+            profile_id
+          )
+        )
       )
     `,
     )
