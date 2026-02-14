@@ -77,9 +77,11 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 
 - **User Authentication** via Supabase
 - **Profile Management**: upload/change avatar, view followers/following
-- **Post Creation**: text + image uploads
+- **Post Creation**: text + multiple image uploads with responsive galleries
 - **Infinite Scrolling** for feeds and profiles
 - **Like/Unlike** posts
+- **Vibe Check Reactions**: one-tap social signals (Aura Up, Real, Mood, Chaotic) with a live top-vibe meter
+- **Quick Poll Posts**: create 2-4 option polls in the composer, vote directly in feed or post detail, and see live percentages
 - **Follow/Unfollow** other users
 - **Light/Dark Mode** toggle
 - **Share & Copy Link** buttons using Web Share API
