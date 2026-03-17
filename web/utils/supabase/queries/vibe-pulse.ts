@@ -100,13 +100,11 @@ export type WeeklyVibeRecap = {
   activeDays: number;
   mostUsedVibe: PulseVibeStat | null;
   vibesReceivedOnPosts: number;
-  mostChaoticDay:
-    | {
-        date: string;
-        label: string;
-        count: number;
-      }
-    | null;
+  mostChaoticDay: {
+    date: string;
+    label: string;
+    count: number;
+  } | null;
   byVibe: PulseVibeStat[];
 };
 
@@ -151,7 +149,10 @@ const getCircleProfileIds = async (
 };
 
 const fetchPagedRows = async <T>(
-  fetchPage: (from: number, to: number) => PromiseLike<{
+  fetchPage: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{
     data: T[] | null;
     error: { message: string } | null;
   }>,
@@ -295,9 +296,7 @@ export const getDailyVibePulse = async (
   ]);
 
   const allStatuses = CircleVibeStatusSchema.array().parse(statusData);
-  const reactions = VibeReactionRowSchema.array().parse(
-    reactionData ?? [],
-  );
+  const reactions = VibeReactionRowSchema.array().parse(reactionData ?? []);
 
   const counts = createEmptyVibeCounts();
   allStatuses.forEach((status) => {
@@ -430,7 +429,9 @@ export const getWeeklyVibeRecap = async (
     throw new Error(postIdResult.error.message);
   }
 
-  const statusRows = WeeklyStatusRowSchema.array().parse(statusResult.data ?? []);
+  const statusRows = WeeklyStatusRowSchema.array().parse(
+    statusResult.data ?? [],
+  );
   const reactionRows = WeeklyReactionRowSchema.array().parse(
     reactionResult.data ?? [],
   );
@@ -463,7 +464,10 @@ export const getWeeklyVibeRecap = async (
     counts[row.vibe] += 1;
     activeDays.add(row.vibe_date);
     if (row.vibe === "chaotic") {
-      chaoticByDay.set(row.vibe_date, (chaoticByDay.get(row.vibe_date) ?? 0) + 1);
+      chaoticByDay.set(
+        row.vibe_date,
+        (chaoticByDay.get(row.vibe_date) ?? 0) + 1,
+      );
     }
   });
 
@@ -489,10 +493,9 @@ export const getWeeklyVibeRecap = async (
       ? null
       : {
           date: chaoticSorted[0][0],
-          label: new Date(`${chaoticSorted[0][0]}T12:00:00.000Z`).toLocaleDateString(
-            undefined,
-            { weekday: "long" },
-          ),
+          label: new Date(
+            `${chaoticSorted[0][0]}T12:00:00.000Z`,
+          ).toLocaleDateString(undefined, { weekday: "long" }),
           count: chaoticSorted[0][1],
         };
 

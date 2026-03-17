@@ -64,7 +64,9 @@ describe("Comment query helpers", () => {
           is: jest.fn().mockReturnValue({
             range: jest.fn().mockReturnValue({
               order: jest.fn().mockReturnValue({
-                order: jest.fn().mockResolvedValue({ data: topRows, error: null }),
+                order: jest
+                  .fn()
+                  .mockResolvedValue({ data: topRows, error: null }),
               }),
             }),
           }),
@@ -77,7 +79,9 @@ describe("Comment query helpers", () => {
         eq: jest.fn().mockReturnValue({
           in: jest.fn().mockReturnValue({
             order: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue({ data: replyRows, error: null }),
+              limit: jest
+                .fn()
+                .mockResolvedValue({ data: replyRows, error: null }),
             }),
           }),
         }),
@@ -85,7 +89,10 @@ describe("Comment query helpers", () => {
     };
 
     const supabase = {
-      from: jest.fn().mockReturnValueOnce(topQuery).mockReturnValueOnce(repliesQuery),
+      from: jest
+        .fn()
+        .mockReturnValueOnce(topQuery)
+        .mockReturnValueOnce(repliesQuery),
     };
 
     const result = await getPostComments(supabase, user, "p1", 0, 10, "top");
@@ -112,7 +119,9 @@ describe("Comment query helpers", () => {
           select: jest.fn().mockReturnValue({
             eq: jest.fn().mockReturnValue({
               eq: jest.fn().mockReturnValue({
-                maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
               }),
             }),
           }),
@@ -125,7 +134,9 @@ describe("Comment query helpers", () => {
         }),
     };
 
-    await expect(setCommentVibe(supabase, user, "c1", "real")).resolves.toBeUndefined();
+    await expect(
+      setCommentVibe(supabase, user, "c1", "real"),
+    ).resolves.toBeUndefined();
   });
 
   test("getMyNotifications -> returns rows + unread count", async () => {
@@ -170,4 +181,3 @@ describe("Comment query helpers", () => {
     expect(result.unreadCount).toBe(2);
   });
 });
-

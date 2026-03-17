@@ -36,6 +36,8 @@ import { Button } from "./ui/button";
 import { TooltipHint } from "./ui/tooltip-hint";
 import { Input } from "./ui/input";
 
+const SEARCH_PROFILE_CHIP_MIN_WIDTH = 420;
+
 export default function Header() {
   const supabase = createSupabaseComponentClient();
   const router = useRouter();
@@ -45,6 +47,7 @@ export default function Header() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
+  const [showSearchProfileChip, setShowSearchProfileChip] = useState(true);
   const searchBoxRef = useRef<HTMLDivElement | null>(null);
 
   const { data, isLoading } = useQuery({
@@ -147,6 +150,26 @@ export default function Header() {
     };
   }, []);
 
+  useEffect(() => {
+    const searchBox = searchBoxRef.current;
+    if (!searchBox) return;
+
+    const updateChipVisibility = () => {
+      setShowSearchProfileChip(
+        searchBox.clientWidth >= SEARCH_PROFILE_CHIP_MIN_WIDTH,
+      );
+    };
+
+    updateChipVisibility();
+
+    if (typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(updateChipVisibility);
+    observer.observe(searchBox);
+
+    return () => observer.disconnect();
+  }, []);
+
   const scrollToComposer = () => {
     if (router.pathname === "/home") {
       const composer = document.getElementById("create-post-section");
@@ -162,7 +185,10 @@ export default function Header() {
   const unreadCount = notificationsData?.unreadCount ?? 0;
   const notifications = notificationsData?.notifications ?? [];
 
-  const openNotificationTarget = (postId: string | null, commentId: string | null) => {
+  const openNotificationTarget = (
+    postId: string | null,
+    commentId: string | null,
+  ) => {
     if (!postId) return;
     if (commentId) {
       router.push(`/post/${postId}#comment-${commentId}`);
@@ -248,7 +274,10 @@ export default function Header() {
 
         {data && (
           <div className="order-3 w-full lg:order-2 lg:flex-1 lg:px-4">
-            <div ref={searchBoxRef} className="relative mx-auto w-full max-w-xl">
+            <div
+              ref={searchBoxRef}
+              className="relative mx-auto w-full max-w-xl"
+            >
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={searchTerm}
@@ -305,16 +334,15 @@ export default function Header() {
                         const isActive = index === activeSearchIndex;
                         const avatarUrl = supabase.storage
                           .from("avatars")
-                          .getPublicUrl(profile.avatar_url ?? "").data.publicUrl;
+                          .getPublicUrl(profile.avatar_url ?? "")
+                          .data.publicUrl;
 
                         return (
                           <button
                             key={profile.id}
                             type="button"
                             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
-                              isActive
-                                ? "bg-primary/12"
-                                : "hover:bg-muted/70"
+                              isActive ? "bg-primary/12" : "hover:bg-muted/70"
                             }`}
                             onMouseEnter={() => setActiveSearchIndex(index)}
                             onClick={() => openProfileFromSearch(profile.id)}
@@ -333,9 +361,11 @@ export default function Header() {
                                 @{profile.handle}
                               </p>
                             </div>
-                            <span className="shrink-0 rounded-full border border-border/70 bg-background/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                              Profile
-                            </span>
+                            {showSearchProfileChip && (
+                              <span className="shrink-0 rounded-full border border-border/70 bg-background/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                                Profile
+                              </span>
+                            )}
                           </button>
                         );
                       })}

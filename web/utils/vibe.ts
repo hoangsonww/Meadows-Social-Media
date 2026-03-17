@@ -56,4 +56,3 @@ export const getUTCDateOffset = (
   const day = baseDate.getUTCDate();
   return new Date(Date.UTC(year, month, day + offsetDays, 12, 0, 0, 0));
 };
-

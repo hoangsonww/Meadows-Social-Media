@@ -16,7 +16,11 @@ describe("Daily vibe pulse query helpers", () => {
           eq: jest.fn().mockReturnValue({
             eq: jest
               .fn()
-              .mockReturnValue({ maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }) }),
+              .mockReturnValue({
+                maybeSingle: jest
+                  .fn()
+                  .mockResolvedValue({ data: null, error: null }),
+              }),
           }),
         }),
       }),
@@ -238,4 +242,3 @@ describe("Daily vibe pulse query helpers", () => {
     expect(result.mostUsedVibe).not.toBeNull();
   });
 });
-

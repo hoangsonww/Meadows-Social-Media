@@ -21,7 +21,12 @@ import {
   getWeeklyVibeRecap,
   setMyDailyVibeStatus,
 } from "@/utils/supabase/queries/vibe-pulse";
-import { toUTCDateString, VIBE_LABELS, VIBE_META, VibeValue } from "@/utils/vibe";
+import {
+  toUTCDateString,
+  VIBE_LABELS,
+  VIBE_META,
+  VibeValue,
+} from "@/utils/vibe";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -37,8 +42,7 @@ const vibeTintClasses: Record<VibeValue, string> = {
     "border-emerald-400/50 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
   real: "border-cyan-400/50 bg-cyan-500/15 text-cyan-700 dark:text-cyan-300",
   mood: "border-amber-400/50 bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  chaotic:
-    "border-rose-400/50 bg-rose-500/15 text-rose-700 dark:text-rose-300",
+  chaotic: "border-rose-400/50 bg-rose-500/15 text-rose-700 dark:text-rose-300",
 };
 
 const vibeBarClasses: Record<VibeValue, string> = {
@@ -130,7 +134,8 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
   const avatarUrl = useMemo(() => {
     const avatarKey = profile?.avatar_url ?? "";
     if (!avatarKey) return undefined;
-    return supabase.storage.from("avatars").getPublicUrl(avatarKey).data.publicUrl;
+    return supabase.storage.from("avatars").getPublicUrl(avatarKey).data
+      .publicUrl;
   }, [profile?.avatar_url, supabase]);
 
   const saveNote = async () => {
@@ -256,7 +261,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
             />
             <div className="mt-2 flex items-center justify-between gap-3">
               <span className="text-xs text-muted-foreground">
-                {myVibe ? `Current vibe: ${VIBE_LABELS[myVibe]}` : "No vibe set yet"}
+                {myVibe
+                  ? `Current vibe: ${VIBE_LABELS[myVibe]}`
+                  : "No vibe set yet"}
               </span>
               <Button
                 type="button"
@@ -358,7 +365,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-bold">{vibe.emoji}</span>
+                          <span className="text-sm font-bold">
+                            {vibe.emoji}
+                          </span>
                           <span className="text-[11px] font-semibold text-muted-foreground">
                             {vibe.percent}%
                           </span>
@@ -386,7 +395,10 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
                 </div>
                 <div className="grid grid-cols-4 gap-2 sm:gap-3">
                   {pulse.byVibe.map((vibe) => (
-                    <div key={`bar-${vibe.vibe}`} className="flex flex-col items-center gap-1.5">
+                    <div
+                      key={`bar-${vibe.vibe}`}
+                      className="flex flex-col items-center gap-1.5"
+                    >
                       <div className="relative flex h-24 w-full items-end overflow-hidden rounded-xl border border-border/70 bg-background/70 p-1.5">
                         <div
                           className={`w-full rounded-lg transition-all duration-500 ${vibeBarClasses[vibe.vibe]}`}
@@ -414,19 +426,25 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
 
               <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
                 <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.13em]">Signals</p>
+                  <p className="text-[11px] uppercase tracking-[0.13em]">
+                    Signals
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {pulse.totalSignals.toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.13em]">Statuses</p>
+                  <p className="text-[11px] uppercase tracking-[0.13em]">
+                    Statuses
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {pulse.activeStatusCount.toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.13em]">Reactions</p>
+                  <p className="text-[11px] uppercase tracking-[0.13em]">
+                    Reactions
+                  </p>
                   <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {pulse.reactionCount.toLocaleString()}
                   </p>
@@ -451,8 +469,8 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Friends are accounts you follow. A vibe appears here once they
-            check in for today.
+            Friends are accounts you follow. A vibe appears here once they check
+            in for today.
           </p>
         </CardHeader>
         <CardContent>
@@ -465,8 +483,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
               {friendStatuses.map((status) => {
                 const person = status.profile!;
                 const personAvatar = person.avatar_url
-                  ? supabase.storage.from("avatars").getPublicUrl(person.avatar_url).data
-                      .publicUrl
+                  ? supabase.storage
+                      .from("avatars")
+                      .getPublicUrl(person.avatar_url).data.publicUrl
                   : undefined;
 
                 return (
@@ -482,7 +501,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{person.name}</p>
+                        <p className="truncate text-sm font-semibold">
+                          {person.name}
+                        </p>
                         <p className="truncate text-xs text-muted-foreground">
                           @{person.handle}
                         </p>
@@ -543,7 +564,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
       <Card className="lg:col-span-12 animate-fade-up border-border/70 bg-card/90">
         <CardHeader className="pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-lg">Posts Influencing Today&apos;s Vibe</CardTitle>
+            <CardTitle className="text-lg">
+              Posts Influencing Today&apos;s Vibe
+            </CardTitle>
             <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/40 px-2 py-1 text-[11px] font-medium text-muted-foreground">
               <Activity className="h-3.5 w-3.5" />
               Live influence
@@ -578,7 +601,8 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
                       className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold ${vibeTintClasses[impactPost.topVibe]}`}
                     >
                       <Flame className="h-3.5 w-3.5" />
-                      {VIBE_LABELS[impactPost.topVibe]} {impactPost.topVibePercent}%
+                      {VIBE_LABELS[impactPost.topVibe]}{" "}
+                      {impactPost.topVibePercent}%
                     </span>
                   </div>
 
@@ -605,7 +629,9 @@ export default function DailyVibePulse({ user, profile }: DailyVibePulseProps) {
         <div className="lg:col-span-12 flex items-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/15 px-3 py-2 text-xs text-muted-foreground">
           <Avatar className="h-7 w-7">
             <AvatarImage src={avatarUrl} />
-            <AvatarFallback>{(profile?.name ?? "ME").slice(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback>
+              {(profile?.name ?? "ME").slice(0, 2).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
           Set your vibe to appear in your circle&apos;s Daily Pulse.
         </div>

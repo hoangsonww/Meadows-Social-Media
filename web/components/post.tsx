@@ -1,4 +1,10 @@
-import { ArrowUpRight, Clock3, Heart, MessageCircle, Sparkles } from "lucide-react";
+import {
+  ArrowUpRight,
+  Clock3,
+  Heart,
+  MessageCircle,
+  Sparkles,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { z } from "zod";
@@ -236,10 +242,7 @@ export default function PostCard({ user, post }: PostCardProps) {
     }
   };
 
-  const handleVibe = async (
-    e: React.MouseEvent,
-    selectedVibe: VibeValue,
-  ) => {
+  const handleVibe = async (e: React.MouseEvent, selectedVibe: VibeValue) => {
     e.stopPropagation();
 
     const previousVibes = vibes;

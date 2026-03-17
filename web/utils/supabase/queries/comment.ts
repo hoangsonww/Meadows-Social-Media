@@ -81,9 +81,11 @@ const uploadCommentImage = async (
     : "";
   const path = `comments/${postId}/${user.id}-${Date.now()}${ext}`;
 
-  const { data, error } = await supabase.storage.from("images").upload(path, image, {
-    upsert: false,
-  });
+  const { data, error } = await supabase.storage
+    .from("images")
+    .upload(path, image, {
+      upsert: false,
+    });
 
   if (error) {
     throw new Error(error.message);
@@ -375,7 +377,8 @@ export const getPostComments = async (
 
   return PostCommentsPage.parse({
     comments,
-    nextCursor: topComments.length >= limit ? cursor + topComments.length : null,
+    nextCursor:
+      topComments.length >= limit ? cursor + topComments.length : null,
     hasMore: topComments.length >= limit,
   });
 };

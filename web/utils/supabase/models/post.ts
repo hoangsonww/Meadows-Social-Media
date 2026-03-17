@@ -61,44 +61,47 @@ const PostAttachmentsArray = z.preprocess((value) => {
   return value;
 }, PostAttachment.array());
 
-const PostCommentCount = z.preprocess((value) => {
-  if (typeof value === "number") {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return 0;
+const PostCommentCount = z.preprocess(
+  (value) => {
+    if (typeof value === "number") {
+      return value;
     }
 
-    const first = value[0] as unknown;
-    if (typeof first === "number") {
-      return first;
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return 0;
+      }
+
+      const first = value[0] as unknown;
+      if (typeof first === "number") {
+        return first;
+      }
+
+      if (
+        first &&
+        typeof first === "object" &&
+        "count" in (first as Record<string, unknown>)
+      ) {
+        const count = (first as { count?: number | null }).count;
+        return count ?? 0;
+      }
+
+      return value.length;
     }
 
     if (
-      first &&
-      typeof first === "object" &&
-      "count" in (first as Record<string, unknown>)
+      value &&
+      typeof value === "object" &&
+      "count" in (value as Record<string, unknown>)
     ) {
-      const count = (first as { count?: number | null }).count;
+      const count = (value as { count?: number | null }).count;
       return count ?? 0;
     }
 
-    return value.length;
-  }
-
-  if (
-    value &&
-    typeof value === "object" &&
-    "count" in (value as Record<string, unknown>)
-  ) {
-    const count = (value as { count?: number | null }).count;
-    return count ?? 0;
-  }
-
-  return 0;
-}, z.number({ coerce: true }).default(0));
+    return 0;
+  },
+  z.number({ coerce: true }).default(0),
+);
 
 /** Defines the schema for posts. */
 export const Post = z.object({

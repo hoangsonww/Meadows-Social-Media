@@ -29,7 +29,8 @@ export default function PulsePage({ user, profile }: PulsePageProps) {
                   Daily Pulse
                 </h1>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Track your circle&apos;s mood and manage your daily vibe status.
+                  Track your circle&apos;s mood and manage your daily vibe
+                  status.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-1.5 text-sm font-medium text-muted-foreground">
@@ -66,4 +67,3 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     props: { user: userData.user, profile },
   };
 }
-

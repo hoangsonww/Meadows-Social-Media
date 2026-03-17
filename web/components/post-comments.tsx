@@ -1,5 +1,10 @@
 import { ChangeEvent, Fragment, useMemo, useRef, useState } from "react";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { User } from "@supabase/supabase-js";
 import { z } from "zod";
 import Image from "next/image";
@@ -28,7 +33,10 @@ import {
   reportPostComment,
   setCommentVibe,
 } from "@/utils/supabase/queries/comment";
-import { PostComment, PostCommentThread } from "@/utils/supabase/models/comment";
+import {
+  PostComment,
+  PostCommentThread,
+} from "@/utils/supabase/models/comment";
 import { getProfileDataByHandle } from "@/utils/supabase/queries/profile";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
@@ -68,7 +76,9 @@ const getDisplayTime = (value: Date) =>
 
 const getCommentImageUrl = (
   imagePath: string | null,
-  imageBucket: { getPublicUrl: (path: string) => { data: { publicUrl: string } } },
+  imageBucket: {
+    getPublicUrl: (path: string) => { data: { publicUrl: string } };
+  },
 ): string | null => {
   if (!imagePath) return null;
   return imageBucket.getPublicUrl(imagePath).data.publicUrl;
@@ -101,7 +111,11 @@ const parseMentionQuery = (content: string, cursor: number): string | null => {
   return match[1].toLowerCase();
 };
 
-export default function PostComments({ user, postId, commentCount }: PostCommentsProps) {
+export default function PostComments({
+  user,
+  postId,
+  commentCount,
+}: PostCommentsProps) {
   const supabase = createSupabaseComponentClient();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -114,9 +128,15 @@ export default function PostComments({ user, postId, commentCount }: PostComment
   const [composerCursor, setComposerCursor] = useState(0);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
-  const [expandedReplyThreads, setExpandedReplyThreads] = useState<Record<string, boolean>>({});
-  const [mentionLoadingHandle, setMentionLoadingHandle] = useState<string | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<
+    string | null
+  >(null);
+  const [expandedReplyThreads, setExpandedReplyThreads] = useState<
+    Record<string, boolean>
+  >({});
+  const [mentionLoadingHandle, setMentionLoadingHandle] = useState<
+    string | null
+  >(null);
 
   const mentionQuery = useMemo(
     () => parseMentionQuery(composerText, composerCursor),
@@ -139,7 +159,14 @@ export default function PostComments({ user, postId, commentCount }: PostComment
   } = useInfiniteQuery({
     queryKey: ["post_comments", postId, sortMode],
     queryFn: async ({ pageParam = 0 }) =>
-      getPostComments(supabase, user, postId, pageParam, COMMENT_PAGE_SIZE, sortMode),
+      getPostComments(
+        supabase,
+        user,
+        postId,
+        pageParam,
+        COMMENT_PAGE_SIZE,
+        sortMode,
+      ),
     enabled: Boolean(postId),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -194,19 +221,24 @@ export default function PostComments({ user, postId, commentCount }: PostComment
     },
     onError: (error) => {
       const message =
-        error instanceof Error ? error.message : "Could not post comment right now.";
+        error instanceof Error
+          ? error.message
+          : "Could not post comment right now.";
       toast.error(message);
     },
   });
 
   const deleteCommentMutation = useMutation({
-    mutationFn: async (commentId: string) => deletePostComment(supabase, user, commentId),
+    mutationFn: async (commentId: string) =>
+      deletePostComment(supabase, user, commentId),
     onSuccess: () => {
       invalidateCommentRelatedQueries();
       toast.success("Comment deleted");
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "Could not delete comment.");
+      toast.error(
+        error instanceof Error ? error.message : "Could not delete comment.",
+      );
     },
   });
 
@@ -215,7 +247,9 @@ export default function PostComments({ user, postId, commentCount }: PostComment
       reportPostComment(supabase, user, params.commentId, params.reason),
     onSuccess: () => toast.success("Comment reported"),
     onError: (error) =>
-      toast.error(error instanceof Error ? error.message : "Could not report comment."),
+      toast.error(
+        error instanceof Error ? error.message : "Could not report comment.",
+      ),
   });
 
   const setCommentVibeMutation = useMutation({
@@ -278,7 +312,10 @@ export default function PostComments({ user, postId, commentCount }: PostComment
     if (!match) return;
 
     const matchedText = match[0];
-    const replacement = matchedText.replace(/@[a-zA-Z0-9_]{1,32}$/, `@${handle} `);
+    const replacement = matchedText.replace(
+      /@[a-zA-Z0-9_]{1,32}$/,
+      `@${handle} `,
+    );
     const nextText =
       textBeforeCursor.slice(0, textBeforeCursor.length - matchedText.length) +
       replacement +
@@ -331,7 +368,8 @@ export default function PostComments({ user, postId, commentCount }: PostComment
       counts[vibe.vibe] += 1;
     });
 
-    const myVibe = comment.vibes.find((vibe) => vibe.profile_id === user.id)?.vibe ?? null;
+    const myVibe =
+      comment.vibes.find((vibe) => vibe.profile_id === user.id)?.vibe ?? null;
 
     return (
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -358,17 +396,25 @@ export default function PostComments({ user, postId, commentCount }: PostComment
     );
   };
 
-  const renderCommentCard = (comment: ThreadComment | FlatComment, isReply: boolean) => {
+  const renderCommentCard = (
+    comment: ThreadComment | FlatComment,
+    isReply: boolean,
+  ) => {
     const author = comment.author;
     const avatarUrl = author?.avatar_url
-      ? supabase.storage.from("avatars").getPublicUrl(author.avatar_url).data.publicUrl
+      ? supabase.storage.from("avatars").getPublicUrl(author.avatar_url).data
+          .publicUrl
       : undefined;
     const imageUrl = getCommentImageUrl(comment.image_url, imageBucket);
     const isMine = comment.author_id === user.id;
-    const replies = !isReply && "replies" in comment ? comment.replies ?? [] : [];
+    const replies =
+      !isReply && "replies" in comment ? (comment.replies ?? []) : [];
     const expanded = expandedReplyThreads[comment.id] ?? false;
     const hasHiddenReplies = replies.length > REPLY_PREVIEW_LIMIT;
-    const visibleReplies = hasHiddenReplies && !expanded ? replies.slice(0, REPLY_PREVIEW_LIMIT) : replies;
+    const visibleReplies =
+      hasHiddenReplies && !expanded
+        ? replies.slice(0, REPLY_PREVIEW_LIMIT)
+        : replies;
 
     return (
       <div
@@ -539,7 +585,9 @@ export default function PostComments({ user, postId, commentCount }: PostComment
             </div>
           ) : (
             <div className="space-y-2">
-              {flattenedComments.map((comment) => renderCommentCard(comment, false))}
+              {flattenedComments.map((comment) =>
+                renderCommentCard(comment, false),
+              )}
               {hasNextPage && (
                 <Button
                   variant="secondary"
@@ -564,14 +612,17 @@ export default function PostComments({ user, postId, commentCount }: PostComment
 
       <Card className="mt-3 border-border/70 bg-card/90">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold">Write a comment</CardTitle>
+          <CardTitle className="text-base font-semibold">
+            Write a comment
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-2xl border border-border/70 bg-card/90 p-3">
             {replyTarget && (
               <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2 text-xs">
                 <span>
-                  Replying to <span className="font-semibold">@{replyTarget.handle}</span>
+                  Replying to{" "}
+                  <span className="font-semibold">@{replyTarget.handle}</span>
                 </span>
                 <Button
                   variant="ghost"
@@ -591,51 +642,60 @@ export default function PostComments({ user, postId, commentCount }: PostComment
                 maxLength={MAX_COMMENT_LENGTH}
                 onChange={(event) => {
                   setComposerText(event.target.value);
-                  setComposerCursor(event.target.selectionStart ?? event.target.value.length);
+                  setComposerCursor(
+                    event.target.selectionStart ?? event.target.value.length,
+                  );
                 }}
                 onClick={(event) => {
-                  setComposerCursor(event.currentTarget.selectionStart ?? composerText.length);
+                  setComposerCursor(
+                    event.currentTarget.selectionStart ?? composerText.length,
+                  );
                 }}
                 onKeyUp={(event) => {
-                  setComposerCursor(event.currentTarget.selectionStart ?? composerText.length);
+                  setComposerCursor(
+                    event.currentTarget.selectionStart ?? composerText.length,
+                  );
                 }}
                 placeholder="Write a comment..."
                 className="min-h-[88px] resize-none pr-2"
               />
 
-              {mentionQuery && mentionSuggestions && mentionSuggestions.length > 0 && (
-                <div className="absolute left-2 top-full z-50 mt-2 w-full max-w-sm rounded-xl border border-border/70 bg-popover/95 p-1 shadow-soft-xl">
-                  {mentionSuggestions.map((profile) => (
-                    <button
-                      key={profile.id}
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-muted"
-                      onClick={() => insertMention(profile.handle)}
-                    >
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage
-                          src={
-                            supabase.storage
-                              .from("avatars")
-                              .getPublicUrl(profile.avatar_url ?? "").data.publicUrl
-                          }
-                        />
-                        <AvatarFallback>
-                          {profile.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold">
-                          {profile.name}
+              {mentionQuery &&
+                mentionSuggestions &&
+                mentionSuggestions.length > 0 && (
+                  <div className="absolute left-2 top-full z-50 mt-2 w-full max-w-sm rounded-xl border border-border/70 bg-popover/95 p-1 shadow-soft-xl">
+                    {mentionSuggestions.map((profile) => (
+                      <button
+                        key={profile.id}
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-muted"
+                        onClick={() => insertMention(profile.handle)}
+                      >
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage
+                            src={
+                              supabase.storage
+                                .from("avatars")
+                                .getPublicUrl(profile.avatar_url ?? "").data
+                                .publicUrl
+                            }
+                          />
+                          <AvatarFallback>
+                            {profile.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold">
+                            {profile.name}
+                          </span>
+                          <span className="block truncate text-xs text-muted-foreground">
+                            @{profile.handle}
+                          </span>
                         </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          @{profile.handle}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      </button>
+                    ))}
+                  </div>
+                )}
             </div>
 
             {selectedImagePreview && (
