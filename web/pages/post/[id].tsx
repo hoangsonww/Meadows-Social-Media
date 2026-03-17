@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -128,6 +128,7 @@ export default function PostPage({ user }: PostPageProps) {
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
   const postId = router.query.id as string;
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["post", postId],
@@ -209,6 +210,13 @@ export default function PostPage({ user }: PostPageProps) {
       sortedPollOptions.reduce((sum, option) => sum + option.votes.length, 0),
     [sortedPollOptions],
   );
+
+  const scrollToComments = () => {
+    commentsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
 
   const myVibe = useMemo(
     () => vibes.find((entry) => entry.profile_id === user.id)?.vibe ?? null,
@@ -699,10 +707,16 @@ export default function PostPage({ user }: PostPageProps) {
                     </span>
                   </Button>
                 </TooltipHint>
-                <span className="inline-flex items-center gap-1 rounded-full bg-background/60 px-3 py-1 text-sm font-semibold text-muted-foreground">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto rounded-full bg-background/60 px-3 py-1 text-sm font-semibold text-muted-foreground hover:bg-background/80 hover:text-foreground"
+                  onClick={scrollToComments}
+                  aria-label="Jump to comments section"
+                >
                   <MessageCircle className="h-4 w-4" />
                   {post.comment_count.toLocaleString()}
-                </span>
+                </Button>
               </div>
 
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -711,11 +725,13 @@ export default function PostPage({ user }: PostPageProps) {
             </footer>
             </article>
 
-            <PostComments
-              user={user}
-              postId={post.id}
-              commentCount={post.comment_count}
-            />
+            <div ref={commentsSectionRef} id="comments-section">
+              <PostComments
+                user={user}
+                postId={post.id}
+                commentCount={post.comment_count}
+              />
+            </div>
           </>
         )}
 

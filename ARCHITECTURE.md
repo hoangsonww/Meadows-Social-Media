@@ -1,7 +1,9 @@
 # Meadows Architecture
 
-> Last updated: 2026-03-17
-> Scope: current implementation in this repository (`main` workspace state), including Daily Vibe Pulse visual analytics, comments/replies, notifications, profile search, and responsive navbar UX.
+> [!NOTE]
+> **Last updated:** 2026-03-17
+>
+> **Scope:** current implementation in this repository (`main` workspace state), including Daily Vibe Pulse visual analytics, comments/replies, notifications, profile search, and responsive navbar UX.
 
 ## 1. Architecture Goals
 
