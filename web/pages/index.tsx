@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Sparkles,
   Timer,
+  UserRound,
   Users,
   Github,
   ChevronDown,
@@ -627,9 +628,10 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 type LandingProps = {
   isAuthenticated: boolean;
+  userId: string | null;
 };
 
-export default function Landing({ isAuthenticated }: LandingProps) {
+export default function Landing({ isAuthenticated, userId }: LandingProps) {
   const typedLine = useTypewriter(heroLines);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -733,20 +735,28 @@ export default function Landing({ isAuthenticated }: LandingProps) {
             transition={{ ...revealTransition, delay: 0.55 }}
             className="mt-8 flex flex-wrap justify-center gap-4"
           >
-            <Btn href="/signup">
-              <Users className="size-5" />
-              Join Meadows
-            </Btn>
             {isAuthenticated ? (
-              <Btn href="/home" outline>
-                <Sparkles className="size-5" />
-                Home Feed
-              </Btn>
+              <>
+                <Btn href="/home">
+                  <Sparkles className="size-5" />
+                  Home
+                </Btn>
+                <Btn href={userId ? `/profile/${userId}` : "/home"} outline>
+                  <UserRound className="size-5" />
+                  Profile
+                </Btn>
+              </>
             ) : (
-              <Btn href="/login" outline>
-                <Send className="size-5" />
-                Log In
-              </Btn>
+              <>
+                <Btn href="/signup">
+                  <Users className="size-5" />
+                  Join Meadows
+                </Btn>
+                <Btn href="/login" outline>
+                  <Send className="size-5" />
+                  Log In
+                </Btn>
+              </>
             )}
           </motion.div>
           <motion.div
@@ -1078,6 +1088,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: {
       isAuthenticated: Boolean(data?.user) && !error,
+      userId: data?.user?.id ?? null,
     },
   };
 }
