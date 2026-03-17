@@ -4,6 +4,7 @@ create table public.post (
   posted_at timestamp with time zone null,
   author_id uuid null default gen_random_uuid (),
   attachment_url text null,
+  comment_count integer not null default 0 check (comment_count >= 0),
   constraint post_pkey primary key (id),
   constraint post_author_id_fkey foreign KEY (author_id) references profile (id)
 ) TABLESPACE pg_default;

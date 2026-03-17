@@ -34,7 +34,8 @@ A full-featured social feed application built with Next.js, Supabase, and React 
   <img src="https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white" alt="Markdown" />
 </p>
 
-> [!IMPORTANT] > **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/)** 🍃
+> [!IMPORTANT]
+> **Live Web App**: **[https://meadows.vercel.app/](https://meadows.vercel.app/).** 🍃
 >
 > Please give it a try and start sharing your thoughts stylishly!
 
@@ -47,15 +48,16 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 3. [Getting Started](#getting-started)
 4. [Environment Variables](#environment-variables)
 5. [Project Structure](#project-structure)
-6. [Key Components](#key-components)
-7. [Scripts](#scripts)
-8. [Supabase Setup](#supabase)
-9. [Testing & Formatting](#testing--formatting)
-10. [GitHub Actions](#github-actions)
-11. [Contributing](#contributing)
-12. [License](#license)
-13. [Acknowledgments](#acknowledgments)
-14. [Contact](#contact)
+6. [Architecture Docs](#architecture-docs)
+7. [Key Components](#key-components)
+8. [Scripts](#scripts)
+9. [Supabase Setup](#supabase-setup)
+10. [Testing & Formatting](#testing--formatting)
+11. [GitHub Actions](#github-actions)
+12. [Contributing](#contributing)
+13. [License](#license)
+14. [Acknowledgments](#acknowledgments)
+15. [Contact](#contact)
 
 ---
 
@@ -81,11 +83,17 @@ A full-featured social feed application built with Next.js, Supabase, and React 
 - **Infinite Scrolling** for feeds and profiles
 - **Like/Unlike** posts
 - **Vibe Check Reactions**: one-tap social signals (Aura Up, Real, Mood, Chaotic) with a live top-vibe meter
+- **Daily Vibe Pulse**: one-tap daily check-in + live social mood dashboard with a Vibe Mix Wheel, Vibe Skyline, and weekly recap
 - **Quick Poll Posts**: create 2-4 option polls in the composer, vote directly in feed or post detail, and see live percentages
+- **Comments & Replies**: full post threads with one-level reply depth for clean conversation UX
+- **Comment Vibe Reactions**: same vibe language on comments for consistent emotional feedback
+- **Mentions in Comments**: `@handle` suggestions while typing, mention highlighting, and mention notifications
+- **Notifications Center**: in-header unread badge and latest interaction notifications
+- **Global Profile Search**: live typeahead search by name/handle, keyboard navigation, click-to-open profile
 - **Follow/Unfollow** other users
 - **Light/Dark Mode** toggle
 - **Share & Copy Link** buttons using Web Share API
-- **Responsive Layout** spanning full width
+- **Responsive Layout** with mobile-optimized navigation and interaction controls
 - **Client-side Bookmarking** (via `localStorage`)
 - **Server-Side Rendering** for initial data fetch
 - **TypeScript** for type safety
@@ -153,28 +161,41 @@ You can find these in your Supabase project settings.
 
 ## Project Structure
 
-```
+```text
 /
-├── components/           # Reusable React components
-│   ├── feed.tsx
-│   ├── post.tsx
-│   ├── ui/              # shadcn/ui-style components
-│   └── ...
-├── pages/                # Next.js pages
-│   ├── index.tsx        # Home feed
-│   ├── post/[id].tsx    # Single post view
-│   ├── profile/[id].tsx # Public profile page
-│   └── _app.tsx
-├── utils/
-│   ├── supabase/
-│   │   ├── clients/     # Supabase client creators
-│   │   └── queries/     # DB query functions
-│   └── models/          # zod schemas
-├── public/               # Static assets
-├── styles/               # Global CSS (if any)
-├── README.md
-└── package.json
+├── database/                         # SQL schema/feature files
+├── migrations/                       # runnable migration scripts
+├── web/
+│   ├── components/
+│   │   ├── header.tsx               # global navbar + notifications + profile search
+│   │   ├── post.tsx                 # feed post card
+│   │   ├── post-comments.tsx        # comments, replies, mentions, comment vibes
+│   │   ├── daily-vibe-pulse.tsx     # pulse dashboard + vibe charts
+│   │   └── ui/                      # shadcn/ui-style components
+│   ├── pages/
+│   │   ├── index.tsx                # landing page
+│   │   ├── home.tsx                 # main feed + composer
+│   │   ├── pulse.tsx                # daily pulse page
+│   │   ├── post/[id].tsx            # post detail + comments
+│   │   ├── profile/[id].tsx         # profile page
+│   │   ├── login.tsx / signup.tsx   # auth entry
+│   │   └── _app.tsx
+│   ├── utils/supabase/
+│   │   ├── clients/                 # browser + SSR clients
+│   │   ├── models/                  # Zod schemas
+│   │   └── queries/                 # data access logic
+│   ├── styles/globals.css
+│   └── package.json
+└── README.md
 ```
+
+---
+
+## Architecture Docs
+
+For a full technical deep-dive (runtime boundaries, data model, query architecture, feature flows, and Mermaid diagrams), see:
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
 
 ---
 
@@ -182,14 +203,15 @@ You can find these in your Supabase project settings.
 
 ### `<Header />`
 
-- Logo + subtitle
-- Light/Dark mode toggle
-- User dropdown: view profile, sign out
+- Responsive global navbar (mobile-first behavior)
+- Live profile search by name/@handle with keyboard navigation
+- Notifications dropdown with unread badge and read-on-open behavior
+- Quick access actions: Pulse, Create Post, Theme toggle, Account menu
 
 ### `<HomePage />`
 
-- “Write a Post” card with image upload
-- Tabs: Feed / Following / Liked
+- “Write a Post” card with multi-image upload and optional polls
+- Tabs: Feed / Following / Liked / Mine
 - Inline infinite scroll of `<PostCard />`
 
 ### `<PostFeed />` (embedded directly)
@@ -201,6 +223,21 @@ You can find these in your Supabase project settings.
 
 - Single post view
 - Share, copy link, email, print, bookmark button
+- Full comments experience via `<PostComments />`
+
+### `<PostComments />`
+
+- Top/Newest comment sorting
+- One-level threaded replies (reply-to-reply handled cleanly in the same thread model)
+- Mention suggestions and highlighted mentions
+- Comment vibe reactions, report, and delete-own-comment actions
+
+### `<DailyVibePulse />`
+
+- Daily vibe check-in with optional status note
+- Meadows Pulse visualization (Vibe Mix Wheel + Vibe Skyline)
+- Circle vibe statuses and weekly recap cards
+- Top posts influencing today’s social mood
 
 ### `<PublicProfilePage />`
 
@@ -223,30 +260,20 @@ You can find these in your Supabase project settings.
 
 ## Supabase Setup
 
-This project uses Supabase for authentication and database management. Supabase provides a powerful backend-as-a-service solution that integrates seamlessly with Next.js applications.
+This project uses Supabase for Auth, Postgres, and Storage.
 
 To set up Supabase:
 
 1. Create a new project on [Supabase](https://supabase.com/).
-2. Set up authentication providers (email/password).
-3. Create a `posts` table with the following schema:
-   - `id`: UUID (Primary Key)
-   - `user_id`: UUID (Foreign Key to users)
-   - `content`: Text
-   - `image_url`: Text (optional)
-   - `created_at`: Timestamp
-4. Create a `users` table with the following schema:
-   - `id`: UUID (Primary Key)
-   - `username`: Text (Unique)
-   - `email`: Text (Unique)
-   - `avatar_url`: Text (optional)
-   - `created_at`: Timestamp
-5. Do the same for the other tables like `followers`, `likes`, etc., as per the schema definitions in the [database directory](./database).
-6. Set up Row Level Security (RLS) policies for the `posts` and `users` tables to allow authenticated users to read/write their own data.
-7. Enable Supabase Storage for image uploads.
-8. Enable Supabase Auth for user management.
-9. Update the `.env.local` file with your Supabase URL and anon key.
-10. Manage your database and tables using the Supabase dashboard as you develop your application.
+2. Set up auth provider(s) (email/password is enough for local development).
+3. Run SQL from the migration files in [`/migrations`](./migrations), especially:
+   - [`all_tables_only.sql`](./migrations/all_tables_only.sql) for full table definitions
+   - [`20260316_add_daily_vibe_and_comments.sql`](./migrations/20260316_add_daily_vibe_and_comments.sql) for Daily Vibe Pulse + comments/replies + notifications feature pack
+4. Create/verify storage buckets:
+   - `avatars`
+   - `images`
+5. Update `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+6. Verify app flows: auth, post creation, vibe reactions, comments/replies, pulse dashboard, and profile search.
 
 FYI, you can find the schema definitions under the [database directory](./database). Below is a visual representation of the database schema:
 
@@ -275,9 +302,9 @@ npm run test:watch
 yarn test:watch
 
 # To run tests with coverage report
-npm run test:coverage
+npm run coverage
 # or
-yarn test:coverage
+yarn coverage
 ```
 
 To format code:

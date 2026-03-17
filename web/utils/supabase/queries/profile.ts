@@ -38,6 +38,97 @@ export const getProfileData = async (
 };
 
 /**
+ * Search profiles by handle or display name for typeahead UX.
+ *
+ * @param supabase - Supabase client to use.
+ * @param term - Raw search term.
+ * @param limit - Maximum number of results.
+ * @returns - Matching profiles ranked by handle relevance.
+ */
+export const searchProfiles = async (
+  supabase: SupabaseClient,
+  term: string,
+  limit = 8,
+): Promise<z.infer<typeof PostAuthor>[]> => {
+  const normalizedTerm = term.trim().replace(/[^a-zA-Z0-9_\s.-]/g, "");
+  if (!normalizedTerm) {
+    return [];
+  }
+
+  const safeLimit = Math.max(1, Math.min(limit, 12));
+  const pattern = `%${normalizedTerm}%`;
+
+  const { data, error } = await supabase
+    .from("profile")
+    .select("id, name, handle, avatar_url")
+    .or(`handle.ilike.${pattern},name.ilike.${pattern}`)
+    .order("handle", { ascending: true })
+    .limit(safeLimit);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  const profiles = PostAuthor.array().parse(data);
+  const lowerTerm = normalizedTerm.toLowerCase();
+
+  const rank = (profile: z.infer<typeof PostAuthor>): number => {
+    const handle = profile.handle.toLowerCase();
+    const name = profile.name.toLowerCase();
+
+    if (handle === lowerTerm) return 6;
+    if (name === lowerTerm) return 5;
+    if (handle.startsWith(lowerTerm)) return 4;
+    if (name.startsWith(lowerTerm)) return 3;
+    if (handle.includes(lowerTerm)) return 2;
+    return 1;
+  };
+
+  return profiles.sort((a, b) => {
+    const scoreDelta = rank(b) - rank(a);
+    if (scoreDelta !== 0) return scoreDelta;
+    return a.handle.localeCompare(b.handle);
+  });
+};
+
+/**
+ * Resolve a profile by exact handle.
+ *
+ * @param supabase - Supabase client to use.
+ * @param handle - Raw handle with or without leading @.
+ * @returns - Matching profile or null.
+ */
+export const getProfileDataByHandle = async (
+  supabase: SupabaseClient,
+  handle: string,
+): Promise<z.infer<typeof PostAuthor> | null> => {
+  const normalizedHandle = handle.trim().replace(/^@/, "").toLowerCase();
+  if (!normalizedHandle) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profile")
+    .select("id, name, handle, avatar_url")
+    .ilike("handle", normalizedHandle)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return PostAuthor.parse(data);
+};
+
+/**
  * This function retrieves the list of profiles that the active user is following.
  *
  * @param supabase - Supabase client to use.
@@ -109,6 +200,7 @@ export const getProfilePosts = async (
       content,
       posted_at,
       attachment_url,
+      comment_count,
       attachments:post_attachment (
         path,
         position

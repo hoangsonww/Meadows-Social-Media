@@ -1,14 +1,15 @@
-import { ArrowUpRight, Clock3, Heart, Sparkles } from "lucide-react";
+import { ArrowUpRight, Clock3, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { z } from "zod";
-import { Post, PostVibeValue } from "@/utils/supabase/models/post";
+import { Post } from "@/utils/supabase/models/post";
 import {
   setPostVibe,
   toggleLike,
   PostVibe,
   voteOnPostPoll,
 } from "@/utils/supabase/queries/post";
+import { VIBE_META, VibeValue } from "@/utils/vibe";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
 import { useEffect, useMemo, useState } from "react";
 import { User } from "@supabase/supabase-js";
@@ -24,15 +25,10 @@ type PostCardProps = {
 };
 
 const vibeOptions: {
-  value: z.infer<typeof PostVibeValue>;
+  value: VibeValue;
   label: string;
   emoji: string;
-}[] = [
-  { value: "aura_up", label: "Aura Up", emoji: "A+" },
-  { value: "real", label: "Real", emoji: "100" },
-  { value: "mood", label: "Mood", emoji: "MOOD" },
-  { value: "chaotic", label: "Chaotic", emoji: "CHAOS" },
-];
+}[] = VIBE_META;
 
 function PostImageGallery({ imageUrls }: { imageUrls: string[] }) {
   if (imageUrls.length === 0) {
@@ -172,7 +168,7 @@ export default function PostCard({ user, post }: PostCardProps) {
   const vibeStats = useMemo(() => {
     const counts = Object.fromEntries(
       vibeOptions.map((opt) => [opt.value, 0]),
-    ) as Record<z.infer<typeof PostVibeValue>, number>;
+    ) as Record<VibeValue, number>;
 
     vibes.forEach((entry) => {
       counts[entry.vibe] += 1;
@@ -209,6 +205,14 @@ export default function PostCard({ user, post }: PostCardProps) {
       queryKey: ["profile_posts"],
       refetchType: "all",
     });
+    queryClient.invalidateQueries({
+      queryKey: ["daily_vibe_pulse"],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["weekly_vibe_recap"],
+      refetchType: "all",
+    });
   };
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -234,7 +238,7 @@ export default function PostCard({ user, post }: PostCardProps) {
 
   const handleVibe = async (
     e: React.MouseEvent,
-    selectedVibe: z.infer<typeof PostVibeValue>,
+    selectedVibe: VibeValue,
   ) => {
     e.stopPropagation();
 
@@ -335,24 +339,32 @@ export default function PostCard({ user, post }: PostCardProps) {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.06] via-transparent to-accent/[0.08] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
       <div className="relative flex w-full gap-3 sm:gap-4">
-        <Avatar className="mt-0.5 h-11 w-11 flex-shrink-0">
-          <AvatarImage src={profileAvatarUrl} />
-          <AvatarFallback>
-            {post.author.name.slice(0, 2).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <Link
+          href={`/profile/${post.author.id}`}
+          aria-label={`Open @${post.author.handle} profile`}
+          className="mt-0.5 block h-11 w-11 flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Avatar className="h-11 w-11">
+            <AvatarImage src={profileAvatarUrl} />
+            <AvatarFallback>
+              {post.author.name.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
 
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex w-full flex-wrap items-start justify-between gap-2">
             <Link
               href={`/profile/${post.author.id}`}
-              className="flex min-w-0 flex-col leading-tight"
+              aria-label={`Open @${post.author.handle} profile`}
+              className="group/profile-link flex min-w-0 flex-col px-1 py-1 leading-tight"
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="truncate text-[15.5px] font-bold text-foreground transition-colors group-hover:text-primary">
+              <p className="truncate text-[15.5px] font-bold text-foreground group-hover/profile-link:underline group-hover/profile-link:underline-offset-2">
                 {post.author.name}
               </p>
-              <p className="truncate text-sm text-muted-foreground">
+              <p className="truncate text-sm text-muted-foreground group-hover/profile-link:underline group-hover/profile-link:underline-offset-2">
                 @{post.author.handle}
               </p>
             </Link>
@@ -480,24 +492,39 @@ export default function PostCard({ user, post }: PostCardProps) {
             </div>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-border/70 pt-3">
-            <Button
-              variant="ghost"
-              className={`h-9 rounded-full px-3.5 ${
-                isLiked
-                  ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 hover:text-rose-500"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={handleLike}
-            >
-              <Heart
-                className={
-                  isLiked ? "fill-rose-500 text-rose-500" : "text-inherit"
-                }
-              />
-              <span className="text-sm font-semibold">
-                {likeCount.toLocaleString()}
-              </span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className={`h-9 rounded-full px-3.5 ${
+                  isLiked
+                    ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 hover:text-rose-500"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={handleLike}
+              >
+                <Heart
+                  className={
+                    isLiked ? "fill-rose-500 text-rose-500" : "text-inherit"
+                  }
+                />
+                <span className="text-sm font-semibold">
+                  {likeCount.toLocaleString()}
+                </span>
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-9 rounded-full px-3.5 text-muted-foreground hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openPost();
+                }}
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span className="text-sm font-semibold">
+                  {post.comment_count.toLocaleString()}
+                </span>
+              </Button>
+            </div>
 
             <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
               Open post
