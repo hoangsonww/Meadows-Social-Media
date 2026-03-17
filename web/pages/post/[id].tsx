@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import PostComments from "@/components/post-comments";
 import {
   ArrowLeft,
+  MessageCircle,
   Clock3,
   Mail,
   Maximize2,
@@ -26,6 +28,7 @@ import {
   voteOnPostPoll,
 } from "@/utils/supabase/queries/post";
 import { PostVibeValue } from "@/utils/supabase/models/post";
+import { VIBE_META } from "@/utils/vibe";
 import { GetServerSidePropsContext } from "next";
 import { createSupabaseServerClient } from "@/utils/supabase/clients/server-props";
 import { User } from "@supabase/supabase-js";
@@ -41,12 +44,7 @@ const vibeOptions: {
   value: z.infer<typeof PostVibeValue>;
   label: string;
   emoji: string;
-}[] = [
-  { value: "aura_up", label: "Aura Up", emoji: "A+" },
-  { value: "real", label: "Real", emoji: "100" },
-  { value: "mood", label: "Mood", emoji: "MOOD" },
-  { value: "chaotic", label: "Chaotic", emoji: "CHAOS" },
-];
+}[] = VIBE_META;
 
 function PostImageGallery({
   imageUrls,
@@ -130,6 +128,7 @@ export default function PostPage({ user }: PostPageProps) {
   const supabase = createSupabaseComponentClient();
   const queryClient = useQueryClient();
   const postId = router.query.id as string;
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["post", postId],
@@ -212,6 +211,13 @@ export default function PostPage({ user }: PostPageProps) {
     [sortedPollOptions],
   );
 
+  const scrollToComments = () => {
+    commentsSectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   const myVibe = useMemo(
     () => vibes.find((entry) => entry.profile_id === user.id)?.vibe ?? null,
     [vibes, user.id],
@@ -255,6 +261,10 @@ export default function PostPage({ user }: PostPageProps) {
     });
     queryClient.invalidateQueries({
       queryKey: ["profile_posts"],
+      refetchType: "all",
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["post_comments", targetPostId],
       refetchType: "all",
     });
   };
@@ -522,182 +532,211 @@ export default function PostPage({ user }: PostPageProps) {
         </div>
 
         {post && (
-          <article className="surface w-full overflow-hidden">
-            <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 px-5 py-5 sm:px-7">
-              <Link
-                href={`/profile/${post.author.id}`}
-                className="group inline-flex min-w-0 items-center gap-3"
-              >
-                <Avatar className="h-12 w-12">
-                  <AvatarImage
-                    src={
-                      supabase.storage
-                        .from("avatars")
-                        .getPublicUrl(post.author.avatar_url ?? "").data
-                        .publicUrl
-                    }
-                  />
-                  <AvatarFallback>
-                    {post.author.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0">
-                  <p className="truncate text-lg font-bold text-foreground group-hover:text-primary">
-                    {post.author.name}
-                  </p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    @{post.author.handle}
-                  </p>
-                </div>
-              </Link>
-
-              <div
-                className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/45 px-3 py-1 text-xs font-medium text-muted-foreground"
-                title={new Date(post.posted_at).toLocaleString()}
-              >
-                <Clock3 className="h-3.5 w-3.5" />
-                {new Date(post.posted_at).toLocaleString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
-              </div>
-            </header>
-
-            <div className="space-y-5 px-5 py-6 sm:px-7">
-              <p className="whitespace-pre-wrap break-words text-[17px] leading-relaxed text-foreground/95">
-                {post.content}
-              </p>
-
-              {poll && (
-                <section className="rounded-2xl border border-border/70 bg-muted/20 p-3">
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Quick Poll
+          <>
+            <article className="surface w-full overflow-hidden">
+              <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 px-5 py-5 sm:px-7">
+                <Link
+                  href={`/profile/${post.author.id}`}
+                  className="group/post-author inline-flex min-w-0 items-center gap-3 px-2 py-1.5"
+                >
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage
+                      src={
+                        supabase.storage
+                          .from("avatars")
+                          .getPublicUrl(post.author.avatar_url ?? "").data
+                          .publicUrl
+                      }
+                    />
+                    <AvatarFallback>
+                      {post.author.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-bold text-foreground group-hover/post-author:underline group-hover/post-author:underline-offset-2">
+                      {post.author.name}
                     </p>
-                    <span className="text-xs font-semibold text-muted-foreground">
-                      {pollVoteTotal.toLocaleString()} votes
-                    </span>
+                    <p className="truncate text-sm text-muted-foreground group-hover/post-author:underline group-hover/post-author:underline-offset-2">
+                      @{post.author.handle}
+                    </p>
+                  </div>
+                </Link>
+
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/45 px-3 py-1 text-xs font-medium text-muted-foreground"
+                  title={new Date(post.posted_at).toLocaleString()}
+                >
+                  <Clock3 className="h-3.5 w-3.5" />
+                  {new Date(post.posted_at).toLocaleString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </header>
+
+              <div className="space-y-5 px-5 py-6 sm:px-7">
+                <p className="whitespace-pre-wrap break-words text-[17px] leading-relaxed text-foreground/95">
+                  {post.content}
+                </p>
+
+                {poll && (
+                  <section className="rounded-2xl border border-border/70 bg-muted/20 p-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        Quick Poll
+                      </p>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {pollVoteTotal.toLocaleString()} votes
+                      </span>
+                    </div>
+
+                    {poll.question && (
+                      <p className="mb-2 text-sm font-semibold text-foreground">
+                        {poll.question}
+                      </p>
+                    )}
+
+                    <div className="space-y-2">
+                      {sortedPollOptions.map((option) => {
+                        const votes = option.votes.length;
+                        const percent =
+                          pollVoteTotal > 0
+                            ? Math.round((votes / pollVoteTotal) * 100)
+                            : 0;
+                        const active = myPollVoteOptionId === option.id;
+
+                        return (
+                          <Button
+                            key={option.id}
+                            variant="ghost"
+                            className={`relative h-auto w-full justify-start overflow-hidden rounded-xl border px-3 py-2 text-left ${
+                              active
+                                ? "border-primary/45 bg-primary/10 text-foreground"
+                                : "border-border/70 bg-background/60 text-foreground"
+                            }`}
+                            onClick={() => handlePollVote(option.id)}
+                          >
+                            <span
+                              className="absolute inset-y-0 left-0 bg-primary/20"
+                              style={{ width: `${percent}%` }}
+                            />
+                            <span className="relative flex w-full items-center justify-between gap-2 text-sm">
+                              <span className="font-medium">
+                                {option.label}
+                              </span>
+                              <span className="text-xs font-semibold text-muted-foreground">
+                                {percent}% ({votes})
+                              </span>
+                            </span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
+                <PostImageGallery
+                  imageUrls={postImageUrls}
+                  onImageClick={setActiveImageIndex}
+                />
+
+                <section className="rounded-2xl border border-border/70 bg-muted/25 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      Vibe Check
+                    </p>
+                    {vibeStats.total > 0 && (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {vibeStats.top.emoji} {vibeStats.top.label} leads (
+                        {vibeStats.topPercent}%)
+                      </span>
+                    )}
                   </div>
 
-                  {poll.question && (
-                    <p className="mb-2 text-sm font-semibold text-foreground">
-                      {poll.question}
-                    </p>
-                  )}
-
-                  <div className="space-y-2">
-                    {sortedPollOptions.map((option) => {
-                      const votes = option.votes.length;
-                      const percent =
-                        pollVoteTotal > 0
-                          ? Math.round((votes / pollVoteTotal) * 100)
-                          : 0;
-                      const active = myPollVoteOptionId === option.id;
+                  <div className="flex flex-wrap gap-2">
+                    {vibeStats.byOption.map((option) => {
+                      const active = myVibe === option.value;
 
                       return (
                         <Button
-                          key={option.id}
+                          key={option.value}
                           variant="ghost"
-                          className={`relative h-auto w-full justify-start overflow-hidden rounded-xl border px-3 py-2 text-left ${
+                          className={`h-8 rounded-full px-3 text-xs font-semibold ${
                             active
-                              ? "border-primary/45 bg-primary/10 text-foreground"
-                              : "border-border/70 bg-background/60 text-foreground"
+                              ? "bg-primary/15 text-primary hover:bg-primary/20"
+                              : "bg-background/60 text-muted-foreground hover:bg-background"
                           }`}
-                          onClick={() => handlePollVote(option.id)}
+                          onClick={() => handleVibe(option.value)}
                         >
-                          <span
-                            className="absolute inset-y-0 left-0 bg-primary/20"
-                            style={{ width: `${percent}%` }}
-                          />
-                          <span className="relative flex w-full items-center justify-between gap-2 text-sm">
-                            <span className="font-medium">{option.label}</span>
-                            <span className="text-xs font-semibold text-muted-foreground">
-                              {percent}% ({votes})
-                            </span>
+                          <span>{option.emoji}</span>
+                          <span>{option.label}</span>
+                          <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] leading-none">
+                            {option.count}
                           </span>
                         </Button>
                       );
                     })}
                   </div>
                 </section>
-              )}
+              </div>
 
-              <PostImageGallery
-                imageUrls={postImageUrls}
-                onImageClick={setActiveImageIndex}
+              <footer className="flex items-center justify-between border-t border-border/70 px-5 py-4 sm:px-7">
+                <div className="flex items-center gap-2">
+                  <TooltipHint
+                    side="top"
+                    content={isLiked ? "Unlike post" : "Like post"}
+                  >
+                    <Button
+                      variant="ghost"
+                      className={`rounded-full px-4 ${
+                        isLiked
+                          ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 hover:text-rose-500"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                      onClick={handleLike}
+                    >
+                      <Heart
+                        className={
+                          isLiked
+                            ? "fill-rose-500 text-rose-500"
+                            : "text-inherit"
+                        }
+                      />
+                      <span className="font-semibold">
+                        {likeCount.toLocaleString()}
+                      </span>
+                    </Button>
+                  </TooltipHint>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-auto rounded-full bg-background/60 px-3 py-1 text-sm font-semibold text-muted-foreground hover:bg-background/80 hover:text-foreground"
+                    onClick={scrollToComments}
+                    aria-label="Jump to comments section"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {post.comment_count.toLocaleString()}
+                  </Button>
+                </div>
+
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Post details
+                </span>
+              </footer>
+            </article>
+
+            <div ref={commentsSectionRef} id="comments-section">
+              <PostComments
+                user={user}
+                postId={post.id}
+                commentCount={post.comment_count}
               />
-
-              <section className="rounded-2xl border border-border/70 bg-muted/25 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Vibe Check
-                  </p>
-                  {vibeStats.total > 0 && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      {vibeStats.top.emoji} {vibeStats.top.label} leads (
-                      {vibeStats.topPercent}%)
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {vibeStats.byOption.map((option) => {
-                    const active = myVibe === option.value;
-
-                    return (
-                      <Button
-                        key={option.value}
-                        variant="ghost"
-                        className={`h-8 rounded-full px-3 text-xs font-semibold ${
-                          active
-                            ? "bg-primary/15 text-primary hover:bg-primary/20"
-                            : "bg-background/60 text-muted-foreground hover:bg-background"
-                        }`}
-                        onClick={() => handleVibe(option.value)}
-                      >
-                        <span>{option.emoji}</span>
-                        <span>{option.label}</span>
-                        <span className="rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] leading-none">
-                          {option.count}
-                        </span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </section>
             </div>
-
-            <footer className="flex items-center justify-between border-t border-border/70 px-5 py-4 sm:px-7">
-              <TooltipHint content={isLiked ? "Unlike post" : "Like post"}>
-                <Button
-                  variant="ghost"
-                  className={`rounded-full px-4 ${
-                    isLiked
-                      ? "bg-rose-500/10 text-rose-500 hover:bg-rose-500/15 hover:text-rose-500"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  onClick={handleLike}
-                >
-                  <Heart
-                    className={
-                      isLiked ? "fill-rose-500 text-rose-500" : "text-inherit"
-                    }
-                  />
-                  <span className="font-semibold">
-                    {likeCount.toLocaleString()}
-                  </span>
-                </Button>
-              </TooltipHint>
-
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Post details
-              </span>
-            </footer>
-          </article>
+          </>
         )}
 
         {!post && !isLoading && (

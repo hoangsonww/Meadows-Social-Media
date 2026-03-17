@@ -61,6 +61,48 @@ const PostAttachmentsArray = z.preprocess((value) => {
   return value;
 }, PostAttachment.array());
 
+const PostCommentCount = z.preprocess(
+  (value) => {
+    if (typeof value === "number") {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return 0;
+      }
+
+      const first = value[0] as unknown;
+      if (typeof first === "number") {
+        return first;
+      }
+
+      if (
+        first &&
+        typeof first === "object" &&
+        "count" in (first as Record<string, unknown>)
+      ) {
+        const count = (first as { count?: number | null }).count;
+        return count ?? 0;
+      }
+
+      return value.length;
+    }
+
+    if (
+      value &&
+      typeof value === "object" &&
+      "count" in (value as Record<string, unknown>)
+    ) {
+      const count = (value as { count?: number | null }).count;
+      return count ?? 0;
+    }
+
+    return 0;
+  },
+  z.number({ coerce: true }).default(0),
+);
+
 /** Defines the schema for posts. */
 export const Post = z.object({
   id: z.string(),
@@ -72,6 +114,7 @@ export const Post = z.object({
   attachments: PostAttachmentsArray,
   poll: NullablePostPoll,
   attachment_url: z.string().nullable(),
+  comment_count: PostCommentCount,
 });
 
 /** Defines the schema for following data. */
@@ -109,4 +152,5 @@ export const emptyPost = Post.parse({
   attachments: [],
   poll: null,
   attachment_url: null,
+  comment_count: 0,
 });

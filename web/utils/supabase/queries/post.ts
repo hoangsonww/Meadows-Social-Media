@@ -14,6 +14,7 @@ const postSelect = `
   content,
   posted_at,
   attachment_url,
+  comment_count,
   attachments:post_attachment (
     path,
     position
