@@ -14,13 +14,11 @@ describe("Daily vibe pulse query helpers", () => {
       from: jest.fn().mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            eq: jest
-              .fn()
-              .mockReturnValue({
-                maybeSingle: jest
-                  .fn()
-                  .mockResolvedValue({ data: null, error: null }),
-              }),
+            eq: jest.fn().mockReturnValue({
+              maybeSingle: jest
+                .fn()
+                .mockResolvedValue({ data: null, error: null }),
+            }),
           }),
         }),
       }),
