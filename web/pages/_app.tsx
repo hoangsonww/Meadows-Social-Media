@@ -126,7 +126,7 @@ export default function App({ Component, pageProps }: AppProps) {
           {/* only show on non-landing pages */}
           {!isLanding && <Header />}
 
-          <main className="relative flex-1 overflow-y-auto">
+          <main className="relative flex-1 overflow-x-hidden overflow-y-auto">
             <Component {...pageProps} />
           </main>
           {!isLanding && <Footer />}
