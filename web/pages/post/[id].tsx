@@ -17,6 +17,7 @@ import {
   Printer,
   Share2,
   Sparkles,
+  Timer,
   X,
 } from "lucide-react";
 import { createSupabaseComponentClient } from "@/utils/supabase/clients/component";
@@ -37,6 +38,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { TooltipHint } from "@/components/ui/tooltip-hint";
 import { z } from "zod";
+import { formatRelativeTimeAgo } from "@/utils/time";
 
 type PostPageProps = { user: User };
 
@@ -563,17 +565,23 @@ export default function PostPage({ user }: PostPageProps) {
                 </Link>
 
                 <div
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/45 px-3 py-1 text-xs font-medium text-muted-foreground"
+                  className="flex flex-wrap items-center justify-end gap-1.5"
                   title={new Date(post.posted_at).toLocaleString()}
                 >
-                  <Clock3 className="h-3.5 w-3.5" />
-                  {new Date(post.posted_at).toLocaleString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/45 px-3 py-1 text-xs font-medium text-muted-foreground">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {new Date(post.posted_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                  <div className="inline-flex items-center gap-1 rounded-full border border-accent/35 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                    <Timer className="h-3.5 w-3.5" />
+                    {formatRelativeTimeAgo(post.posted_at)}
+                  </div>
                 </div>
               </header>
 
